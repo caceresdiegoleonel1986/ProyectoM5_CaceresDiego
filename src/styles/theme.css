@@ -1,0 +1,64 @@
+/* 🎨 Sistema base de diseño */
+:root {
+  /* Background */
+  --background: #FFFFFF;       /* Ivory White */
+  --surface: #F5F5F5;          /* Cloud Gray */
+  --card: #FFFFFF;             /* Ivory White */
+
+  /* Text */
+  --foreground: #1C1C1C;       /* Charcoal Black */
+  --muted: #666666;
+
+  /* Brand */
+  --primary: #E63946;          /* Ruby Glow */
+  --primary-hover: #8B0000;    /* Crimson Deep */
+  --primary-foreground: #FFFFFF;
+
+  /* Feedback */
+  --info: #3498db;             /* Azul informativo */
+  --succes: #2ECC71;           /* Emerald Hint */
+  --warning: #FFB347;          /* Amber Accent */
+  --danger: #E63946;           /* Ruby Glow */
+
+  /* Border */
+  --border: #dddddd;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Spacing */
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+
+  /* Shadow */
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* 🌑 Modo oscuro */
+.dark {
+  /* Background */
+  --background: #1C1C1C;       /* Charcoal Black */
+  --surface: #2a2a2a;
+  --card: #121212;
+
+  /* Text */
+  --foreground: #F5F5F5;       /* Cloud Gray */
+  --muted: #aaaaaa;
+
+  /* Brand */
+  --primary: #8B0000;          /* Crimson Deep */
+  --primary-hover: #E63946;    /* Ruby Glow */
+  --primary-foreground: #FFFFFF;
+
+  /* Feedback */
+  --info: #5dade2;             /* Azul más claro */
+  --succes: #2ECC71;           /* Emerald Hint */
+  --warning: #FFB347;          /* Amber Accent */
+  --danger: #E63946;           /* Ruby Glow */
+
+  /* Border */
+  --border: #333333;
+}
