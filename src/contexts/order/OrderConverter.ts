@@ -1,10 +1,8 @@
 import {
-  FirestoreDataConverter,
-  QueryDocumentSnapshot,
-  SnapshotOptions,
   Timestamp,
 } from "firebase/firestore";
-import type { Order, OrderItem, OrderStatusHistory } from "../types/order.types";
+import type { FirestoreDataConverter, QueryDocumentSnapshot, SnapshotOptions } from "firebase/firestore";
+import type { Order, OrderItem, OrderStatusHistory } from "../../types/order.types";
 
 export const orderConverter: FirestoreDataConverter<Order> = {
   toFirestore(order: Order) {
@@ -30,7 +28,8 @@ export const orderConverter: FirestoreDataConverter<Order> = {
       total: data.total,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt,
       status: data.status,
-      history: (data.history ?? []).map((h: any) => ({
+      history: (data.history ?? []).map(
+        (h: { status: Order["status"]; changedAt: Timestamp | Date }) => ({
         status: h.status,
         changedAt: h.changedAt instanceof Timestamp ? h.changedAt.toDate() : h.changedAt,
       })),
