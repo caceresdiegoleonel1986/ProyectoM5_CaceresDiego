@@ -1,136 +1,99 @@
-import { useState, useEffect } from "react";
-
-export interface Product {
-  id: string;
-  name: string;
-  image: string;
-  description: string;
-  price: number;
-  stock: number;
-}
-
-const products: Product[] = [
-  {
-    id: "p1",
-    name: "Zapatillas Runner Pro",
-    image: "https://via.placeholder.com/200x150?text=Runner+Pro",
-    description: "Zapatillas deportivas con suela ergonómica y diseño moderno.",
-    price: 12000,
-    stock: 15,
-  },
-  {
-    id: "p2",
-    name: "Mochila Ergonómica",
-    image: "https://via.placeholder.com/200x150?text=Mochila",
-    description: "Mochila resistente al agua con compartimentos múltiples.",
-    price: 8500,
-    stock: 30,
-  },
-  {
-    id: "p3",
-    name: "Auriculares ANC",
-    image: "https://via.placeholder.com/200x150?text=Auriculares+ANC",
-    description: "Auriculares con cancelación activa de ruido y sonido premium.",
-    price: 15000,
-    stock: 20,
-  },
-  {
-    id: "p4",
-    name: "Smartwatch Fit",
-    image: "https://via.placeholder.com/200x150?text=Smartwatch",
-    description: "Reloj inteligente con monitoreo de salud y notificaciones.",
-    price: 18000,
-    stock: 10,
-  },
-  {
-    id: "p5",
-    name: "Campera Kairo",
-    image: "https://via.placeholder.com/200x150?text=Campera+Kairo",
-    description: "Campera liviana, ideal para climas fríos y estilo urbano.",
-    price: 22000,
-    stock: 8,
-  },
-];
+import { useState, useRef, useEffect, useCallback } from "react";
+import SearchBar from "./SearchBar";
+import { useProducts } from "../../contexts/products/useProduct";
+import { useFavorite } from "../../contexts/favorites/useFavorite"; // hook de favoritos
 
 export default function ProductList() {
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
 
-  // Al montar el componente, cargamos favoritos desde localStorage
+  const { products, loading, error, lastDoc, hasMore, fetchProducts } = useProducts();
+  const { favorites, addFavorite, removeFavorite } = useFavorite();
+
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // carga inicial
   useEffect(() => {
-    // Usamos una función para evitar el warning
-    const loadFavorites = () => {
-      const storedFavorites = localStorage.getItem("favorites");
-      if (storedFavorites) {
-        try {
-          setFavorites(JSON.parse(storedFavorites));
-        } catch (error) {
-          console.error("Error parseando favoritos:", error);
-        }
+    fetchProducts({ pageSize: 20 });
+  }, [fetchProducts]);
+
+  // búsqueda y filtros
+  useEffect(() => {
+    fetchProducts({ searchPrefix: search || undefined, categoryId: category || undefined, pageSize: 20 });
+  }, [search, category, fetchProducts]);
+
+  // scroll infinito
+  const handleObserver = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const target = entries[0];
+      if (target.isIntersecting && hasMore && !loading) {
+        fetchProducts({ searchPrefix: search || undefined, categoryId: category || undefined, cursor: lastDoc, pageSize: 20 });
       }
-    };
+    },
+    [hasMore, loading, lastDoc, search, category, fetchProducts]
+  );
 
-    loadFavorites();
-  }, []);
-
-  // Cada vez que cambie favorites, lo guardamos en localStorage
   useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  }, [favorites]);
+    if (observerRef.current) observerRef.current.disconnect();
 
-    const toggleFavorite = (id: string) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id]
-    );
-  };
+    observerRef.current = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: "200px",
+      threshold: 0.1,
+    });
+
+    if (sentinelRef.current) {
+      observerRef.current.observe(sentinelRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, [handleObserver]);
+
+  if (loading && products.length === 0) return <p>Cargando productos...</p>;
+  if (error) return <p className="text-red-600">Error: {error}</p>;
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">🛍️ Productos Kairo</h1>
+
+      <SearchBar onSearch={(term, cat) => { setSearch(term); setCategory(cat); }} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {products.map((product) => {
           const isFavorite = favorites.includes(product.id);
 
           return (
-            <div
-              key={product.id}
-              className="border rounded-lg shadow-md p-4 flex flex-col items-center bg-white dark:bg-gray-800"
-            >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-40 object-cover rounded-md mb-4"
-              />
+            <div key={product.id} className="border rounded-lg shadow-md p-4 flex flex-col items-center bg-white dark:bg-gray-800">
               <h2 className="text-lg font-semibold">{product.name}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                {product.description}
-              </p>
-              <p className="text-red-600 font-bold mb-1">
-                ${product.price.toLocaleString("es-AR")}
-              </p>
-              <p className="text-sm text-gray-500">
-                Stock disponible: {product.stock}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{product.description}</p>
+              <p className="text-red-600 font-bold mb-1">${product.price}</p>
+              <p className="text-sm text-gray-500">Stock disponible: {product.stock}</p>
 
               {/* Botones de acción */}
               <div className="mt-3 flex gap-2">
-                <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors">
-                  Añadir al carrito
-                </button>
                 <button
-                  onClick={() => toggleFavorite(product.id)}
+                  onClick={() => (isFavorite ? removeFavorite(product.id) : addFavorite(product.id))}
                   className={`px-4 py-2 rounded-md transition-colors ${
-                    isFavorite
-                      ? "bg-yellow-600 text-white"
-                      : "bg-yellow-500 text-white hover:bg-yellow-600"
+                    isFavorite ? "bg-yellow-600 text-white" : "bg-yellow-500 text-white hover:bg-yellow-600"
                   }`}
                 >
                   {isFavorite ? "⭐ En favoritos" : "☆ Favorito"}
+                </button>
+                <button className="bg-primary text-white px-4 py-2 rounded-md hover:bg-secondary transition-colors">
+                  🛒 Añadir al carrito
                 </button>
               </div>
             </div>
           );
         })}
       </div>
+
+      <div ref={sentinelRef} className="h-10"></div>
+
+      {loading && <p className="text-center mt-4 text-gray-600">Cargando más productos...</p>}
     </div>
   );
 }
