@@ -4,7 +4,7 @@ type ErrorStateProps = {
 };
 
 export const ErrorState: React.FC<ErrorStateProps> = ({ message, onRetry }) => (
-  <div>
+  <div className="state-container" role="alert">
     <p>Error: {message}</p>
     {onRetry && <button onClick={onRetry}>Reintentar</button>}
   </div>

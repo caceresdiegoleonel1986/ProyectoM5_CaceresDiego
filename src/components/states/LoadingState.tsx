@@ -5,7 +5,7 @@ type LoadingStateProps = {
 
 export function LoadingState({ message = "Cargando...", skeleton }: LoadingStateProps) {
   return (
-    <div className="state-container">
+    <div className="state-container" role="status" aria-live="polite">
       {skeleton ?? <span className="spinner" />}
       <p>{message}</p>
     </div>
