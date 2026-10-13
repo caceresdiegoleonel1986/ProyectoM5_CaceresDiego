@@ -1,0 +1,80 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- USERS ---
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == 'customer'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.keys().hasOnly(['email', 'displayName', 'role', 'createdAt']);
+
+      allow update: if isAdmin() || (
+        signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName'])
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // --- PRODUCTS ---
+    match /products/{productId} {
+      allow read: if true; // catálogo público
+      allow create, update, delete: if isAdmin();
+    }
+
+    // --- ORDERS ---
+    match /orders/{orderId} {
+      // Solo usuarios logueados pueden crear órdenes
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['userId','items','total','createdAt'])
+        && request.resource.data.createdAt == request.time;
+
+      // Admin ve todas, usuario solo las suyas
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+
+      // Solo admin puede modificar o borrar
+      allow update, delete: if isAdmin();
+    }
+
+    // --- REVIEWS ---
+    match /reviews/{reviewId} {
+      allow read: if true;
+
+      // Solo usuarios logueados pueden crear reseñas
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() > 0
+        && request.resource.data.comment.size() <= 2000
+        && request.resource.data.userName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.displayName
+        && exists(/databases/$(database)/documents/products/$(request.resource.data.productId));
+
+      allow update: if false;
+
+      // Admin o autor pueden borrar
+      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+  }
+}
