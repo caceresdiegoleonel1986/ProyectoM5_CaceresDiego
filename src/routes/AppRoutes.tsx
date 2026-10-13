@@ -11,7 +11,7 @@ const AdminRoute = lazy(() => import("../pages/AdminRoute"));
 const FavoritesPage = lazy(() => import("../pages/FavoritesPage"));
 const MyOrdersPage = lazy(() => import("../pages/MyOrdersPage"));
 
-function RequireAuth({ children }: { children: ReactNode }) {
+export function RequireAuth({ children }: { children: ReactNode }) {
   const { authState } = useAuth();
   const location = useLocation();
 
@@ -22,7 +22,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return children;
 }
 
-function RequireAdmin({ children }: { children: ReactNode }) {
+export function RequireAdmin({ children }: { children: ReactNode }) {
   const { authState, isAdmin } = useAuth();
   if (authState.status === "loading") return <LoadingState />;
   if (authState.status !== "authenticated") return <Navigate to="/ingresar" replace />;
