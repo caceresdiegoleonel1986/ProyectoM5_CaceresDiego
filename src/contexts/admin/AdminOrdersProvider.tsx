@@ -14,16 +14,19 @@ import {
 import { db } from "../../config/firebase";
 import { orderConverter } from "../../services/converters/orderConverter";
 import { updateOrderStatus as persistOrderStatus } from "../../services/orderService";
-import type { Order } from "../../types/order.types";
+import type { Order, OrderStatus } from "../../types/order.types";
 import { AdminOrdersContext } from "./AdminOrdersContext";
 import type { AdminAnalytics, AdminOrdersContextType } from "./AdminOrdersContext";
+import { buildSalesCharts } from "./analytics";
 
 const ordersRef = collection(db, "orders").withConverter(orderConverter);
 const emptyAnalytics: AdminAnalytics = {
   productCount: 0,
   orderCount: 0,
-  paidOrderCount: 0,
-  paidRevenue: 0,
+  completedOrderCount: 0,
+  completedRevenue: 0,
+  revenueByDay: [],
+  topProducts: [],
 };
 
 export function AdminOrdersProvider({ children }: { children: ReactNode }) {
@@ -40,25 +43,28 @@ export function AdminOrdersProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
-    const paidOrdersQuery = query(ordersRef, where("status", "==", "paid"));
-    const [productCount, orderCount, paidTotals] = await Promise.all([
+    const completedOrdersQuery = query(ordersRef, where("status", "==", "completed"));
+    const recentOrdersQuery = query(ordersRef, orderBy("createdAt", "desc"), limit(200));
+    const [productCount, orderCount, completedTotals, recentOrders] = await Promise.all([
       getCountFromServer(collection(db, "products")),
       getCountFromServer(ordersRef),
-      getAggregateFromServer(paidOrdersQuery, {
-        paidOrderCount: count(),
-        paidRevenue: sum("total"),
+      getAggregateFromServer(completedOrdersQuery, {
+        completedOrderCount: count(),
+        completedRevenue: sum("total"),
       }),
+      getDocs(recentOrdersQuery),
     ]);
-    const paidData = paidTotals.data();
+    const completedData = completedTotals.data();
     setAnalytics({
       productCount: productCount.data().count,
       orderCount: orderCount.data().count,
-      paidOrderCount: paidData.paidOrderCount,
-      paidRevenue: paidData.paidRevenue ?? 0,
+      completedOrderCount: completedData.completedOrderCount,
+      completedRevenue: completedData.completedRevenue ?? 0,
+      ...buildSalesCharts(recentOrders.docs.map((orderDoc) => orderDoc.data())),
     });
   }, []);
 
-  const updateOrderStatus = useCallback(async (id: string, status: Order["status"]) => {
+  const updateOrderStatus = useCallback(async (id: string, status: OrderStatus) => {
     await persistOrderStatus(id, status);
     const changedAt = new Date();
     setOrders((current) => current.map((order) => order.id === id ? {
