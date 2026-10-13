@@ -1,8 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getStorage } from "firebase/storage";
-import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,7 +22,5 @@ if (missingFirebaseSettings.length > 0) {
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
-export const functions = getFunctions(app, "us-central1");
 export const googleProvider = new GoogleAuthProvider();
 export const measurementId = import.meta.env.VITE_FIREBASE_MEASUREMENT_ID;
