@@ -10,9 +10,15 @@ export function FavoriteProvider({ children }: { children: React.ReactNode }) {
   // Cargar favoritos desde localStorage
   useEffect(() => {
     const stored = localStorage.getItem("favorites");
-    if (stored) {
-      const parsed: string[] = JSON.parse(stored);
-      parsed.forEach((id) => dispatch({ type: "ADD_FAVORITE", payload: id }));
+    if (!stored) return;
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        parsed.filter((id): id is string => typeof id === "string")
+          .forEach((id) => dispatch({ type: "ADD_FAVORITE", payload: id }));
+      }
+    } catch {
+      localStorage.removeItem("favorites");
     }
   }, []);
 
