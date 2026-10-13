@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { AdminProductsProvider } from "./AdminProductsContext";
-import { AdminOrdersProvider } from "./AdminOrdersContext";
+import { AdminProductsProvider } from "./AdminProductsProvider";
+import { AdminOrdersProvider } from "./AdminOrdersProvider";
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   return (
