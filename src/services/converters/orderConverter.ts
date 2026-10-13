@@ -1,6 +1,16 @@
 import type { FirestoreDataConverter, QueryDocumentSnapshot, WithFieldValue } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
-import type { Order, OrderStatusHistory } from "../../types/order.types";
+import type { Order, OrderStatus, OrderStatusHistory } from "../../types/order.types";
+import { ORDER_STATUSES } from "../../types/order.types";
+
+const legacyStatuses: Record<string, OrderStatus> = { created: "pending", paid: "completed" };
+
+/** Normaliza estados guardados por versiones anteriores (created/paid). */
+function normalizeStatus(value: unknown): OrderStatus {
+  if (typeof value !== "string") return "pending";
+  const known = ORDER_STATUSES.find((status) => status === value);
+  return known ?? legacyStatuses[value] ?? "pending";
+}
 
 export const orderConverter: FirestoreDataConverter<Order> = {
   toFirestore(order: WithFieldValue<Order>) {
@@ -21,9 +31,10 @@ export const orderConverter: FirestoreDataConverter<Order> = {
       customerName: order.customerName ?? "",
       items: order.items,
       total: order.total,
-      status: order.status ?? "created",
+      status: order.status ?? "pending",
       history,
       shippingAddress: order.shippingAddress ?? null,
+      payment: order.payment ?? null,
       createdAt:
         order.createdAt instanceof Date
           ? Timestamp.fromDate(order.createdAt)
@@ -35,8 +46,8 @@ export const orderConverter: FirestoreDataConverter<Order> = {
   fromFirestore(snapshot: QueryDocumentSnapshot): Order {
     const data = snapshot.data();
     const historyData = Array.isArray(data.history) ? data.history : [];
-    const history: OrderStatusHistory[] = historyData.map((h: { status?: Order["status"]; changedAt?: { toDate?: () => Date } | string | number; note?: string }) => ({
-      status: h.status || "created",
+    const history: OrderStatusHistory[] = historyData.map((h: { status?: unknown; changedAt?: { toDate?: () => Date } | string | number; note?: string }) => ({
+      status: normalizeStatus(h.status),
       changedAt:
         h.changedAt && typeof h.changedAt === "object" && "toDate" in h.changedAt && typeof h.changedAt.toDate === "function"
           ? h.changedAt.toDate()
@@ -51,9 +62,10 @@ export const orderConverter: FirestoreDataConverter<Order> = {
       customerName: data.customerName,
       items: data.items ?? [],
       total: Number(data.total ?? 0),
-      status: data.status || "created",
+      status: normalizeStatus(data.status),
       history,
       shippingAddress: data.shippingAddress ?? undefined,
+      payment: data.payment ?? undefined,
       createdAt:
         data.createdAt instanceof Timestamp
           ? data.createdAt.toDate()
