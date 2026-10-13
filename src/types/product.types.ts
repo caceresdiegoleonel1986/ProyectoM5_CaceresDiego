@@ -5,7 +5,12 @@ export type CategoryId =
   | "smartwatches"
   | "camperas";
 
-// Interfaz principal del producto
+export interface Category {
+  id: CategoryId;
+  name: string;
+  description?: string;
+}
+
 export interface Product {
   id: string;                // ID del documento en Firestore
   name: string;              // Nombre visible del producto
@@ -13,8 +18,10 @@ export interface Product {
   description: string;       // Descripción corta
   price: number;             // Precio en la moneda definida
   stock: number;             // Cantidad disponible
-  imageUrl?: string;         // URL de la imagen (opcional)
+  imageUrl?: string;         // URL de la imagen
   categoryId: CategoryId;    // Relación con la categoría
+  rating?: number;           // Promedio de calificación (1 - 5)
+  ratingCount?: number;      // Cantidad de reviews
   createdAt: Date;           // Fecha de creación
-  updatedAt?: Date;          // Fecha de última actualización (opcional)
+  updatedAt?: Date;          // Fecha de última actualización
 }
