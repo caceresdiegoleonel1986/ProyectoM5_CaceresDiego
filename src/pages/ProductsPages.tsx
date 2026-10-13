@@ -1,28 +1,49 @@
-import { useEffect, useState } from "react";
-import { useProducts } from "../contexts/products/useProduct";
+import { useState } from "react";
+import { useProductsRealtime } from "../contexts/products/useProductsRealtime";
 import { useDebounce } from "../hooks/useDebounce";
 import { ProductGrid } from "../components/ui/ProductGrid";
-import { LoadingState, EmptyState, ErrorState } from "../components/states/index";
+import { LoadingState, EmptyState, ErrorState } from "../components/states";
+import { useCart } from "../contexts/cart/useCart";
+import { useFavorite } from "../contexts/favorites/useFavorite";
 
 const CATEGORIES = [
   { id: "", label: "Todas" },
-  { id: "shoes", label: "Zapatillas" },
-  { id: "clothing", label: "Ropa" },
+  { id: "zapatillas", label: "Zapatillas" },
+  { id: "mochilas", label: "Mochilas" },
+  { id: "auriculares", label: "Auriculares" },
+  { id: "smartwatches", label: "Smartwatches" },
+  { id: "camperas", label: "Camperas" },
 ];
 
 export function ProductsPage() {
-  const { products, loading, error, hasMore, loadingMore, loadFirstPage, loadMore } = useProducts();
+  const { addToCart } = useCart();
+  const { favorites, addFavorite, removeFavorite } = useFavorite();
   const [searchText, setSearchText] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const debouncedSearch = useDebounce(searchText, 400);
   const searchPrefix = debouncedSearch.trim().toLowerCase();
+  const {
+    products,
+    loading,
+    error,
+    hasMore,
+    loadingMore,
+    loadMore,
+    retry,
+  } = useProductsRealtime(
+    categoryId || undefined,
+    searchPrefix.length >= 2 ? searchPrefix : undefined,
+  );
 
-  useEffect(() => {
-    loadFirstPage({
-      categoryId: categoryId || null,
-      searchPrefix: searchPrefix.length >= 2 ? searchPrefix : undefined,
-    });
-  }, [categoryId, searchPrefix, loadFirstPage]);
+  const handleAddToCart = (productId: string) => {
+    const product = products.find((item) => item.id === productId);
+    if (product && product.stock > 0) addToCart(product);
+  };
+
+  const handleToggleFavorite = (productId: string) => {
+    if (favorites.includes(productId)) removeFavorite(productId);
+    else addFavorite(productId);
+  };
 
   const hasFilters = Boolean(searchPrefix || categoryId);
 
@@ -49,21 +70,26 @@ export function ProductsPage() {
       {!loading && error && (
         <ErrorState
           message={error}
-          onRetry={() => loadFirstPage({
-            categoryId: categoryId || null,
-            searchPrefix: searchPrefix.length >= 2 ? searchPrefix : undefined,
-          })}
+          onRetry={retry}
         />
       )}
 
       {!loading && !error && products.length === 0 && (
-        <EmptyState variant={hasFilters ? "no-results" : "no-products"} />
+        <EmptyState
+          variant={hasFilters ? "no-results" : "no-products"}
+          title={hasFilters ? "No encontramos productos" : "Todavía no hay productos"}
+        />
       )}
 
       {!loading && !error && products.length > 0 && (
         <>
-          <ProductGrid products={products} />
-          <button onClick={loadMore} disabled={loadingMore || !hasMore}>
+          <ProductGrid
+            products={products}
+            favorites={favorites}
+            onAddToCart={handleAddToCart}
+            onToggleFavorite={handleToggleFavorite}
+          />
+          <button onClick={() => void loadMore()} disabled={loadingMore || !hasMore}>
             {loadingMore ? "Cargando…" : hasMore ? "Cargar más" : "No hay más productos"}
           </button>
         </>
