@@ -80,6 +80,11 @@ export async function getProductById(id: string): Promise<Product | null> {
     : null;
 }
 
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  const products = await Promise.all(ids.map((id) => getProductById(id)));
+  return products.filter((product): product is Product => product !== null);
+}
+
 export async function listProductsByCategory(
   categoryId: string,
   pageSize = 20
