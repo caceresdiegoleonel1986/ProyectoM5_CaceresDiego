@@ -12,6 +12,8 @@ export const productConverter: FirestoreDataConverter<Product> = {
       stock: product.stock ?? 0,
       categoryId: product.categoryId,
       imageUrl: product.imageUrl ?? null,
+      rating: product.rating ?? 5,
+      ratingCount: product.ratingCount ?? 0,
       createdAt:
         product.createdAt instanceof Date
           ? Timestamp.fromDate(product.createdAt)
@@ -42,6 +44,8 @@ export const productConverter: FirestoreDataConverter<Product> = {
       stock: typeof data.stock === "number" ? data.stock : 0,
       categoryId: (data.categoryId || data.category || "zapatillas") as CategoryId,
       imageUrl: data.imageUrl || undefined,
+      rating: typeof data.rating === "number" ? data.rating : 5,
+      ratingCount: typeof data.ratingCount === "number" ? data.ratingCount : 0,
       createdAt:
         data.createdAt instanceof Timestamp
           ? data.createdAt.toDate()
