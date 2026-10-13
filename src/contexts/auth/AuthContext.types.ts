@@ -1,12 +1,12 @@
-export type UserRole = "user" | "admin";
+import type { AuthState, UserProfile, UserRole } from "../../types/auth.types";
 
-export type AuthState =
-  | { status: "anonymous" }
-  | {
-      status: "authenticated";
-      user: {
-        id: string;
-        email: string;
-        role: UserRole;
-      };
-    };
+export type AuthContextType = {
+  authState: AuthState;
+  user: UserProfile | null;
+  role: UserRole;
+  isAdmin: boolean;
+  login: (email: string, pass: string) => Promise<UserProfile>;
+  loginGoogle: () => Promise<UserProfile>;
+  register: (email: string, pass: string, displayName?: string) => Promise<UserProfile>;
+  logout: () => Promise<void>;
+};
