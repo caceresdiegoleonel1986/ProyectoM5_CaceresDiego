@@ -3,16 +3,9 @@ import Footer from "./Footer";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header fijo arriba */}
+    <div className="app-layout">
       <Header />
-
-      {/* Contenido dinámico */}
-      <main className="flex-1 px-6 py-4">
-        {children}
-      </main>
-
-      {/* Footer adaptativo */}
+      <main className="app-main">{children}</main>
       <Footer />
     </div>
   );
