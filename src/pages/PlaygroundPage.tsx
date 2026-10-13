@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../components/ui/Button';
-import { ProductCard } from '../components/product/ProductCard';
+import { ProductCard } from '../components/common/ProductCard';
 import { LoadingState, EmptyState, ErrorState } from '../components/states';
 import { Modal } from '../components/ui/Modal';
 import type { Product } from '../types/product.types';
