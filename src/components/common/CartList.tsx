@@ -1,5 +1,7 @@
 import type React from "react";
+import { Link } from "react-router-dom";
 import { useCart } from "../../contexts/cart/useCart";
+import ConfirmActionButton from "./ConfirmActionButton";
 
 export const CartList: React.FC = () => {
   const { items, totalItems, totalPrice, addToCart, decreaseQuantity, removeFromCart, clearCart } = useCart();
@@ -24,9 +26,14 @@ export const CartList: React.FC = () => {
               <button onClick={() => decreaseQuantity(item.product.id)}>
                 ➖
               </button>
-              <button onClick={() => removeFromCart(item.product.id)}>
-                ❌ Eliminar
-              </button>
+              <ConfirmActionButton
+                title={`¿Quitar ${item.product.name} del carrito?`}
+                description="Se eliminará este producto y su cantidad del carrito."
+                confirmLabel="Quitar producto"
+                onConfirm={() => removeFromCart(item.product.id)}
+              >
+                Eliminar
+              </ConfirmActionButton>
             </div>
           </li>
         ))}
@@ -36,9 +43,15 @@ export const CartList: React.FC = () => {
       <p>Total de ítems: {totalItems}</p>
       <p>Total a pagar: ${totalPrice}</p>
 
-      <button onClick={clearCart}>
+      <ConfirmActionButton
+        title="¿Vaciar todo el carrito?"
+        description={`Se quitarán ${totalItems} artículos del carrito. Esta acción no se puede deshacer.`}
+        confirmLabel="Sí, vaciar carrito"
+        onConfirm={clearCart}
+      >
         Vaciar carrito
-      </button>
+      </ConfirmActionButton>
+      <Link className="ml-3" to="/checkout">Continuar al checkout</Link>
     </div>
   );
 };
