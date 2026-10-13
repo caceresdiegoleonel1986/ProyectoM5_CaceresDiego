@@ -1,6 +1,7 @@
 import {
   collection,
-  addDoc,
+  doc,
+  runTransaction,
   getDocs,
   query,
   where,
@@ -61,16 +62,29 @@ export async function getProductReviews(productId: string): Promise<Review[]> {
   }
 }
 
+/** Guarda la review y actualiza el promedio del producto en una sola transacción. */
 export async function addReview(reviewData: Omit<Review, "id" | "createdAt">): Promise<Review> {
   const now = new Date();
-  const docRef = await addDoc(collection(db, "reviews"), {
-    ...reviewData,
-    createdAt: Timestamp.fromDate(now),
+  const reviewRef = doc(collection(db, "reviews"));
+  const productRef = doc(db, "products", reviewData.productId);
+
+  await runTransaction(db, async (tx) => {
+    const product = await tx.get(productRef);
+    if (!product.exists()) throw new Error("El producto ya no existe.");
+    const count: number = product.data().ratingCount ?? 0;
+    const average: number = product.data().rating ?? 0;
+    const nextCount = count + 1;
+
+    tx.set(reviewRef, { ...reviewData, createdAt: Timestamp.fromDate(now) });
+    tx.update(productRef, {
+      rating: Math.round(((average * count + reviewData.rating) / nextCount) * 100) / 100,
+      ratingCount: nextCount,
+    });
   });
 
   return {
     ...reviewData,
-    id: docRef.id,
+    id: reviewRef.id,
     createdAt: now,
   };
 }
