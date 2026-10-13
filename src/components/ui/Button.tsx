@@ -1,4 +1,5 @@
 import type React from 'react';
+import Spinner from "./Spinner";
 
 type ButtonBaseProps = {
   size?: 'sm' | 'md' | 'lg';
@@ -33,7 +34,7 @@ export const Button: React.FC<ButtonProps> = (props) => {
         onClick={onClick}
         disabled={isDisabled}
       >
-        {loading ? 'Cargando…' : children}
+        {loading ? <><Spinner size="sm" /> Cargando…</> : children}
       </button>
     );
   }
