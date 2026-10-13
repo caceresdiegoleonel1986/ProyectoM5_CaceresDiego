@@ -1,12 +1,17 @@
-export type UserRole = "user" | "admin";
+export type UserRole = "customer" | "admin";
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  displayName?: string;
+  role: UserRole;
+  createdAt?: Date;
+}
 
 export type AuthState =
-  | { status: "anonymous" }
+  | { status: "loading"; user?: null }
+  | { status: "anonymous"; user?: null }
   | {
       status: "authenticated";
-      user: {
-        id: string;
-        email: string;
-        role: UserRole;
-      };
+      user: UserProfile;
     };
