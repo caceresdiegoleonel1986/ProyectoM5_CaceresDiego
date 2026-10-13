@@ -2,13 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/auth/useAuth";
 import { getOrdersByUser } from "../services/orderService";
 import type { Order } from "../types/order.types";
+import { ORDER_STATUS_LABELS } from "../types/order.types";
 import { EmptyState, ErrorState, LoadingState } from "../components/states";
-
-const statusLabels: Record<Order["status"], string> = {
-  created: "Recibida",
-  paid: "Pagada",
-  cancelled: "Cancelada",
-};
 
 export default function MyOrdersPage() {
   const { user } = useAuth();
@@ -48,14 +43,33 @@ export default function MyOrdersPage() {
           <li className="border-b border-[var(--border)] pb-4" key={order.id}>
             <div className="flex flex-wrap justify-between gap-2">
               <strong>Pedido {order.id}</strong>
-              <span>{statusLabels[order.status]}</span>
+              <span>{ORDER_STATUS_LABELS[order.status]}</span>
             </div>
             <p>{order.createdAt.toLocaleDateString()} · ${order.total.toFixed(2)}</p>
-            <ul>
-              {order.items.map((item) => (
-                <li key={item.productId}>{item.name} × {item.quantity}</li>
-              ))}
-            </ul>
+            <details className="mt-2">
+              <summary className="cursor-pointer">Ver detalle</summary>
+              <ul className="mt-2">
+                {order.items.map((item) => (
+                  <li key={item.productId}>
+                    {item.name} × {item.quantity} — ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                  </li>
+                ))}
+              </ul>
+              {order.shippingAddress && (
+                <p className="mt-2">
+                  Envío a {order.shippingAddress.fullName}, {order.shippingAddress.address}, {order.shippingAddress.city} ({order.shippingAddress.postalCode})
+                </p>
+              )}
+              {order.payment && <p>Pago simulado con tarjeta terminada en {order.payment.cardLast4}</p>}
+              <h3 className="mt-2 font-semibold">Historial</h3>
+              <ol>
+                {order.history.map((entry) => (
+                  <li key={`${entry.status}-${entry.changedAt.getTime()}`}>
+                    {entry.changedAt.toLocaleString()} · {ORDER_STATUS_LABELS[entry.status]}
+                  </li>
+                ))}
+              </ol>
+            </details>
           </li>
         ))}
       </ul>
