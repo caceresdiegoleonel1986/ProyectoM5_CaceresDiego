@@ -1,15 +1,12 @@
-import type { JSX } from "react";
-import Header from "./components/common/Header";
-import ProductList from "./components/common/ProductList";
+import AppRoutes from "./routes/AppRoutes";
+import Layout from "./components/common/Layout";
 
-function App(): JSX.Element {
- 
+function App() {
   return (
-    <div style={{ padding: "2rem" }}>
-      <Header />
-      <ProductList />
-      </div>
+    <Layout>
+      <AppRoutes />
+    </Layout>
   );
 }
 
-  export default App;
+export default App;
