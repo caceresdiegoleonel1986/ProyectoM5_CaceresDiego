@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import SearchBar from "./SearchBar";
-import { useProducts } from "../../contexts/products/useProductsRealtime";
+import { useProducts } from "../../contexts/products/useProduct";
 import { useFavorite } from "../../contexts/favorites/useFavorite"; // hook de favoritos
 
 export default function ProductList() {
