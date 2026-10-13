@@ -18,15 +18,19 @@ export const initialState: CartState = {
 export function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD_TO_CART": {
+      const { product, quantity } = action.payload;
+      const stock = Number.isInteger(product.stock) && product.stock > 0 ? product.stock : 0;
+      if (!Number.isInteger(quantity) || quantity <= 0 || stock === 0) return state;
       const existing = state.items.find(
-        (item) => item.product.id === action.payload.product.id
+        (item) => item.product.id === product.id
       );
+      const nextQuantity = Math.min(stock, (existing?.quantity ?? 0) + quantity);
       if (existing) {
         return {
           ...state,
           items: state.items.map((item) =>
-            item.product.id === action.payload.product.id
-              ? { ...item, quantity: item.quantity + action.payload.quantity }
+            item.product.id === product.id
+              ? { product, quantity: nextQuantity }
               : item
           ),
         };
@@ -35,7 +39,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: [
           ...state.items,
-          { product: action.payload.product, quantity: action.payload.quantity },
+          { product, quantity: nextQuantity },
         ],
       };
     }
@@ -48,6 +52,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
 
     case "DECREASE_QUANTITY": {
       const decAmount = action.payload.quantity ?? 1;
+      if (!Number.isInteger(decAmount) || decAmount <= 0) return state;
       return {
         ...state,
         items: state.items
