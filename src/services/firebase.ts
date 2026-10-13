@@ -1,1 +1,1 @@
-export { app, db, auth, measurementId } from "../config/firebase";
+export { app, db, auth, storage, functions, googleProvider, measurementId } from "../config/firebase";
