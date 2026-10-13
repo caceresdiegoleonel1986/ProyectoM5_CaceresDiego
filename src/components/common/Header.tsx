@@ -1,94 +1,81 @@
+import { Link, NavLink } from "react-router-dom";
 import { useCart } from "../../contexts/cart/useCart";
 import { useTheme } from "../../contexts/theme/useTheme";
 import { useFavorite } from "../../contexts/favorites/useFavorite";
 import { useAuth } from "../../contexts/auth/useAuth";
-import { useHeaderVisible } from "../../hooks/useHeaderVisible";
+import LogoutConfirmButton from "./LogoutConfirmButton";
+import Spinner from "../ui/Spinner";
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `site-nav__link${isActive ? " is-active" : ""}`;
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
   const { totalItems } = useCart();
   const { totalFavorites } = useFavorite();
-  const { authState, logout } = useAuth();
+  const { authState, isAdmin } = useAuth();
   const user = authState.status === "authenticated" ? authState.user : null;
-  const { headerRef } = useHeaderVisible();
 
   return (
-    <header
-      ref={headerRef}
-      className="bg-primary text-white shadow-md rounded-xl overflow-hidden"
-    >
-      <div className="flex items-center justify-between px-6 py-3">
-        {/* Logo */}
-        <a
-          href="/"
-          className="flex items-center bg-white/95 hover:bg-white px-3 py-1.5 rounded-lg shadow-sm transition-all duration-200"
-          title="KairoShop Inicio"
-        >
-          <img
-            src="/kairo-logo-full.png"
-            alt="KairoShop"
-            className="h-10 w-auto object-contain"
-          />
-        </a>
+    <header className="site-header">
+      <div className="site-header__inner">
+        <Link to="/" className="site-brand" title="KairoShop Inicio">
+          <img src="/kairo-logo-full.png" alt="KairoShop" />
+        </Link>
 
-        {/* Navegación principal */}
-        <nav className="flex gap-6 font-medium items-center">
-          <a href="/" className="hover:text-secondary transition-colors">🏠 Inicio</a>
-          <a href="/productos" className="hover:text-secondary transition-colors">🛍️ Productos</a>
-          <a href="/carrito" className="relative hover:text-secondary transition-colors">
-            🛒 Carrito
+        <nav className="site-nav" aria-label="Navegación principal">
+          <NavLink to="/" end className={navLinkClass}>Inicio</NavLink>
+          <NavLink to="/productos" className={navLinkClass}>Productos</NavLink>
+          <NavLink to="/carrito" className={navLinkClass}>
+            <span aria-hidden="true">🛒</span> Carrito
             {totalItems > 0 && (
-              <span className="absolute -top-2 -right-4 bg-secondary text-white text-xs rounded-full px-1">
+              <span className="site-nav__count" aria-label={`${totalItems} artículos`}>
                 {totalItems}
               </span>
             )}
-          </a>
-          <a href="/favoritos" className="relative hover:text-secondary transition-colors">
-            ❤️ Favoritos
+          </NavLink>
+          <NavLink to="/favoritos" className={navLinkClass}>
+            <span aria-hidden="true">♥</span> Favoritos
             {totalFavorites > 0 && (
-              <span className="absolute -top-2 -right-4 bg-secondary text-white text-xs rounded-full px-1">
+              <span className="site-nav__count" aria-label={`${totalFavorites} favoritos`}>
                 {totalFavorites}
               </span>
             )}
-          </a>
+          </NavLink>
+          {user && <NavLink to="/mis-pedidos" className={navLinkClass}>Mis pedidos</NavLink>}
+          {isAdmin && <NavLink to="/admin" className={navLinkClass}>Panel admin</NavLink>}
         </nav>
 
-        {/* Acciones de usuario */}
-        <div className="flex items-center gap-4">
-          {/* Toggle Dark */}
+        <div className="site-actions">
           <button
+            type="button"
+            aria-label={theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+            title={theme === "dark" ? "Tema claro" : "Tema oscuro"}
             onClick={toggleTheme}
-            className="p-2 rounded-md bg-white text-primary hover:bg-secondary hover:text-white transition-colors"
+            className="icon-button"
           >
-            {theme === "dark" ? "☀️" : "🌙"}
+            {theme === "dark" ? "☼" : "☾"}
           </button>
 
-          {/* Autenticación */}
           {user ? (
-            <>
-              <span className="font-semibold">👋 Hola, {user.email}</span>
-              <button
-                onClick={logout}
-                className="px-3 py-1.5 rounded-md bg-white text-primary hover:bg-secondary hover:text-white transition-colors"
-              >
-                🚪 Salir
-              </button>
-            </>
+            <div className="account-actions">
+              <div className="account-identity">
+                <span className="account-identity__name">{user.displayName || user.email}</span>
+                <span className={`role-badge${isAdmin ? " role-badge--admin" : ""}`}>
+                  {isAdmin ? "ADMIN" : "CLIENTE"}
+                </span>
+              </div>
+              <LogoutConfirmButton className="button button--quiet button--compact">
+                Salir
+              </LogoutConfirmButton>
+            </div>
           ) : (
-            <>
-              <a
-                href="/ingresar"
-                className="px-3 py-1.5 rounded-md bg-white text-primary hover:bg-secondary hover:text-white transition-colors"
-              >
-                🔑 Ingresar
-              </a>
-              <a
-                href="/registrarse"
-                className="px-3 py-1.5 rounded-md bg-white text-primary hover:bg-secondary hover:text-white transition-colors"
-              >
-                📝 Registrarse
-              </a>
-            </>
+            authState.status === "loading" ? <Spinner size="sm" label="Verificando sesión" /> : (
+              <div className="account-actions">
+                <Link to="/ingresar" className="button button--quiet button--compact">Ingresar</Link>
+                <Link to="/registrarse" className="button button--primary button--compact">Crear cuenta</Link>
+              </div>
+            )
           )}
         </div>
       </div>
