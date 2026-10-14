@@ -50,6 +50,15 @@ function applyCors(request: VercelRequest, response: VercelResponse): void {
 }
 
 export default async function handler(request: VercelRequest, response: VercelResponse): Promise<void> {
+  try {
+    await handle(request, response);
+  } catch (error) {
+    console.error("presign-upload falló:", error);
+    response.status(500).json({ error: "Error interno al firmar la subida." });
+  }
+}
+
+async function handle(request: VercelRequest, response: VercelResponse): Promise<void> {
   applyCors(request, response);
   if (request.method === "OPTIONS") {
     response.status(204).end();
