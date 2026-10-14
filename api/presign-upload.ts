@@ -25,7 +25,10 @@ async function isAdmin(idToken: string): Promise<boolean> {
     `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${requireEnv("FIREBASE_API_KEY")}`,
     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) },
   );
-  if (!lookup.ok) return false;
+  if (!lookup.ok) {
+    console.error("isAdmin: lookup del token falló", lookup.status, await lookup.text());
+    return false;
+  }
   const { users } = (await lookup.json()) as { users?: Array<{ localId?: string }> };
   const uid = users?.[0]?.localId;
   if (!uid) return false;
@@ -34,7 +37,10 @@ async function isAdmin(idToken: string): Promise<boolean> {
     `https://firestore.googleapis.com/v1/projects/${requireEnv("FIREBASE_PROJECT_ID")}/databases/(default)/documents/users/${uid}`,
     { headers: { Authorization: `Bearer ${idToken}` } },
   );
-  if (!profile.ok) return false;
+  if (!profile.ok) {
+    console.error("isAdmin: lectura de users/{uid} falló", profile.status, await profile.text());
+    return false;
+  }
   const body = (await profile.json()) as { fields?: { role?: { stringValue?: string } } };
   return body.fields?.role?.stringValue === "admin";
 }
