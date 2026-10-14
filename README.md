@@ -1,8 +1,22 @@
+<p align="center">
+	<img src="public/kairo-logo-full.png" alt="KairoShop" width="420">
+</p>
+
 # KairoShop
 
 E-commerce con panel de administración, hecho con React, TypeScript, Firebase (Auth y Firestore, plan gratuito Spark) y AWS S3. Una función serverless en Vercel firma las subidas de imágenes.
 
 **Demo en producción:** [proyecto-m5-caceres-diego.vercel.app](https://proyecto-m5-caceres-diego.vercel.app/)
+
+## Capturas
+
+**Catálogo**
+
+![Catálogo de KairoShop](public/kairoshop-catalogo.png)
+
+**Ingreso**
+
+![Pantalla de ingreso de KairoShop](public/kairoshop-login.png)
 
 ## Funcionalidades
 
@@ -33,7 +47,7 @@ E-commerce con panel de administración, hecho con React, TypeScript, Firebase (
 
 ## Puesta en marcha
 
-1. Copia `.env.example` a `.env` y completa la configuración de Firebase.
+1. Copia `.env.example` a `.env` y completa la configuración de Firebase. En PowerShell: `Copy-Item .env.example .env`.
 2. Ejecuta `npm install` y `npm run dev`.
 3. Opcional: `npm run seed` carga productos de ejemplo.
 
@@ -46,13 +60,13 @@ Para probar la subida de imágenes en local, usa `vercel dev` o define `VITE_UPL
 | `npm run dev` | Servidor de desarrollo. |
 | `npm run build` | Chequeo de tipos y build de producción. |
 | `npm run lint` | ESLint. |
-| `npm test` | Tests con Vitest. |
+| `npm run test` | Tests con Vitest. |
 | `npm run test:coverage` | Tests con reporte de cobertura. |
 | `npm run seed` | Carga datos de ejemplo en Firestore. |
 
 ## Tests
 
-La suite cubre reducers, hooks, providers de Auth y productos, guards de rutas, checkout, servicios de órdenes y upload, converters y componentes. Se ejecuta con `npm test` y la cobertura con `npm run test:coverage`.
+La suite cubre reducers, hooks, providers de Auth y productos, guards de rutas, checkout, servicios de órdenes y upload, converters y componentes. Se ejecuta con `npm run test` y la cobertura con `npm run test:coverage`.
 
 ## Roles y seguridad
 
@@ -100,3 +114,5 @@ firebase deploy --only firestore:rules,firestore:indexes
 ```
 
 `vercel.json` redirige todas las rutas a `index.html` para que funcione el router del cliente.
+
+Antes de cada release, completa la [checklist de producción](production-checklist.md).
