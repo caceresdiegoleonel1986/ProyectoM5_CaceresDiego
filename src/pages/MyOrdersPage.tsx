@@ -36,32 +36,39 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl py-8">
-      <h1 className="mb-6 text-2xl font-semibold">Mis pedidos</h1>
-      <ul className="grid gap-4">
+    <section className="page">
+      <h1>Mis pedidos</h1>
+      <ul className="orders-list">
         {orders.map((order) => (
-          <li className="border-b border-[var(--border)] pb-4" key={order.id}>
-            <div className="flex flex-wrap justify-between gap-2">
+          <li className="order-card" key={order.id}>
+            <div className="order-card__head">
               <strong>Pedido {order.id}</strong>
-              <span>{ORDER_STATUS_LABELS[order.status]}</span>
+              <span className={`status-badge status-badge--${order.status}`}>{ORDER_STATUS_LABELS[order.status]}</span>
             </div>
             <p>{order.createdAt.toLocaleDateString()} · ${order.total.toFixed(2)}</p>
-            <details className="mt-2">
-              <summary className="cursor-pointer">Ver detalle</summary>
-              <ul className="mt-2">
+            <details>
+              <summary>Ver detalle</summary>
+              <ul className="order-item-list">
                 {order.items.map((item) => (
-                  <li key={item.productId}>
-                    {item.name} × {item.quantity} — ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                  <li className="order-item" key={item.productId}>
+                    {item.imageUrl ? (
+                      <img className="order-item__thumbnail" src={item.imageUrl} alt={item.name} />
+                    ) : (
+                      <span className="order-item__thumbnail order-item__thumbnail--empty" role="img" aria-label={`Imagen no disponible para ${item.name}`} />
+                    )}
+                    <span className="order-item__text">
+                      {item.name} × {item.quantity} — ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                    </span>
                   </li>
                 ))}
               </ul>
               {order.shippingAddress && (
-                <p className="mt-2">
+                <p>
                   Envío a {order.shippingAddress.fullName}, {order.shippingAddress.address}, {order.shippingAddress.city} ({order.shippingAddress.postalCode})
                 </p>
               )}
               {order.payment && <p>Pago simulado con tarjeta terminada en {order.payment.cardLast4}</p>}
-              <h3 className="mt-2 font-semibold">Historial</h3>
+              <h3>Historial</h3>
               <ol>
                 {order.history.map((entry) => (
                   <li key={`${entry.status}-${entry.changedAt.getTime()}`}>
