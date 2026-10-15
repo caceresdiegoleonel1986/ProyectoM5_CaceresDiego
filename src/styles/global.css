@@ -452,25 +452,29 @@
 }
 
 .favorites-grid article > .card-grid > .btn {
-  padding-inline: 0.65rem;
-  font-size: 0.8rem;
-}
-
-.favorites-grid article > .favorites-remove {
-  grid-column: 2;
-  width: 100%;
-  min-height: 48px;
-  padding: 0.45rem 0.5rem;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--foreground);
-  box-shadow: none;
-  font-size: 0.8rem;
+  grid-column: 1 / -1;
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.82rem;
   line-height: 1.25;
   white-space: normal;
 }
 
-.favorites-grid article > .favorites-remove:hover {
+.favorites-grid article > button.favorites-remove {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: none;
+  font-size: 0.82rem;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.favorites-grid article > button.favorites-remove:hover {
   border-color: color-mix(in srgb, var(--secondary) 65%, var(--border));
   background: color-mix(in srgb, var(--secondary) 12%, var(--surface));
 }
