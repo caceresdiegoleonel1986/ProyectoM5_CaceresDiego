@@ -53,7 +53,7 @@ export function CheckoutPage() {
 
   if (orderId) {
     return (
-      <p role="status">
+      <p role="status" className="notice notice--success">
         ✅ ¡Pago aprobado y orden creada! Tu número de orden es <strong>{orderId}</strong>.{" "}
         <Link to="/mis-pedidos">Ver mis pedidos</Link>
       </p>
@@ -65,20 +65,22 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl py-6">
-      <h2 className="mb-3 text-xl font-semibold">Revisa tu pedido</h2>
-      <ul>
-        {items.map(item => (
-          <li key={item.product.id}>
-            {item.product.name} x {item.quantity} — ${(item.product.price * item.quantity).toFixed(2)}
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2 font-semibold">Total: ${totalPrice.toFixed(2)}</p>
-      {!user && <p>Inicia sesión antes de realizar el pedido.</p>}
-      <form className="mt-6 grid gap-3" onSubmit={(event) => void handleCheckout(event)}>
+    <div className="page">
+      <section className="panel">
+        <h2>Revisa tu pedido</h2>
+        <ul className="summary-list">
+          {items.map(item => (
+            <li key={item.product.id}>
+              {item.product.name} x {item.quantity} — ${(item.product.price * item.quantity).toFixed(2)}
+            </li>
+          ))}
+        </ul>
+        <p className="checkout-total">Total: ${totalPrice.toFixed(2)}</p>
+        {!user && <p>Inicia sesión antes de realizar el pedido.</p>}
+      </section>
+      <form className="panel form-grid" onSubmit={(event) => void handleCheckout(event)}>
         <h3>Dirección de envío</h3>
-        <label className="grid gap-1">Nombre completo
+        <label>Nombre completo
           <input
             autoComplete="name"
             required
@@ -87,7 +89,7 @@ export function CheckoutPage() {
             onChange={(event) => setShippingAddress({ ...shippingAddress, fullName: event.target.value })}
           />
         </label>
-        <label className="grid gap-1">Dirección
+        <label>Dirección
           <input
             autoComplete="street-address"
             required
@@ -96,7 +98,7 @@ export function CheckoutPage() {
             onChange={(event) => setShippingAddress({ ...shippingAddress, address: event.target.value })}
           />
         </label>
-        <label className="grid gap-1">Ciudad
+        <label>Ciudad
           <input
             autoComplete="address-level2"
             required
@@ -105,7 +107,7 @@ export function CheckoutPage() {
             onChange={(event) => setShippingAddress({ ...shippingAddress, city: event.target.value })}
           />
         </label>
-        <label className="grid gap-1">Código postal
+        <label>Código postal
           <input
             autoComplete="postal-code"
             required
@@ -114,7 +116,7 @@ export function CheckoutPage() {
             onChange={(event) => setShippingAddress({ ...shippingAddress, postalCode: event.target.value })}
           />
         </label>
-        <label className="grid gap-1">Teléfono
+        <label>Teléfono
           <input
             type="tel"
             autoComplete="tel"
@@ -124,8 +126,8 @@ export function CheckoutPage() {
           />
         </label>
         <h3>Pago (simulado)</h3>
-        <p className="text-sm">No se realiza ningún cobro. Usa cualquier tarjeta de 16 dígitos; 4000 0000 0000 0002 simula un rechazo.</p>
-        <label className="grid gap-1">Número de tarjeta
+        <p className="form-grid__hint">No se realiza ningún cobro. Usa cualquier tarjeta de 16 dígitos; 4000 0000 0000 0002 simula un rechazo.</p>
+        <label>Número de tarjeta
           <input
             inputMode="numeric"
             autoComplete="cc-number"
@@ -136,8 +138,8 @@ export function CheckoutPage() {
             onChange={(event) => setCard({ ...card, number: event.target.value })}
           />
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="grid gap-1">Vencimiento
+        <div className="form-grid__row">
+          <label>Vencimiento
             <input
               autoComplete="cc-exp"
               required
@@ -147,7 +149,7 @@ export function CheckoutPage() {
               onChange={(event) => setCard({ ...card, expiry: event.target.value })}
             />
           </label>
-          <label className="grid gap-1">CVC
+          <label>CVC
             <input
               inputMode="numeric"
               autoComplete="cc-csc"
@@ -158,11 +160,11 @@ export function CheckoutPage() {
             />
           </label>
         </div>
-        <button type="submit" disabled={loading || !items.length || !user}>
+        <button className="button button--primary" type="submit" disabled={loading || !items.length || !user}>
           {loading ? <><Spinner size="sm" /> Procesando pago…</> : `Pagar $${totalPrice.toFixed(2)}`}
         </button>
       </form>
-      {error && <p role="alert" className="mt-3 text-red-700">{error}</p>}
+      {error && <p role="alert" className="notice notice--error">{error}</p>}
     </div>
   );
 }
