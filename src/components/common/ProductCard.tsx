@@ -26,12 +26,14 @@ export const ProductCard: React.FC<ProductCardProps> = (props) => {
       {product.imageUrl && <img src={product.imageUrl} alt={product.name} />}
       <h3>{product.name}</h3>
 
-      {props.layout === "grid" && props.showPrice && <p>${product.price}</p>}
+      {props.layout === "grid" && props.showPrice && <p className="card-price">${product.price}</p>}
 
-      {product.ratingCount !== undefined && product.ratingCount > 0 && (
+      {product.ratingCount !== undefined && product.ratingCount > 0 ? (
         <p aria-label={`Calificación ${product.rating ?? 0} de 5, ${product.ratingCount} reseñas`}>
           ★ {product.rating?.toFixed(1) ?? "0.0"} ({product.ratingCount})
         </p>
+      ) : (
+        props.layout === "grid" && <p aria-hidden="true">&nbsp;</p>
       )}
 
       {props.layout === "list" && props.showDescription && <p>{product.description}</p>}
