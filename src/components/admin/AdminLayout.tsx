@@ -3,17 +3,17 @@ import { Link } from "react-router-dom";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <header className="flex flex-wrap items-center justify-between gap-3 bg-[var(--foreground)] px-4 py-3 text-[var(--background)]">
-        <strong>KairoShop · Panel de administración</strong>
-        <nav aria-label="Navegación de administración" className="flex gap-4">
+    <div className="admin-shell">
+      <header className="admin-topbar">
+        <strong className="admin-topbar__brand">KairoShop <span>· Panel de administración</span></strong>
+        <nav aria-label="Navegación de administración" className="admin-topbar__nav">
           <a href="#analiticas">Analíticas</a>
           <a href="#productos">Productos</a>
           <a href="#ordenes">Órdenes</a>
-          <Link to="/">Volver a la tienda</Link>
+          <Link to="/" className="admin-topbar__back">Volver a la tienda</Link>
         </nav>
       </header>
-      <main className="px-4">{children}</main>
+      <main className="admin-main">{children}</main>
     </div>
   );
 }
