@@ -13,6 +13,18 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function reviewPurchaseIsValid(productId, orderId, itemIndex) {
+      return orderId is string
+        && itemIndex is int
+        && itemIndex >= 0
+        && exists(/databases/$(database)/documents/orders/$(orderId))
+        && get(/databases/$(database)/documents/orders/$(orderId)).data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/orders/$(orderId)).data.status in ['pending', 'processing', 'completed']
+        && get(/databases/$(database)/documents/orders/$(orderId)).data.items is list
+        && itemIndex < get(/databases/$(database)/documents/orders/$(orderId)).data.items.size()
+        && get(/databases/$(database)/documents/orders/$(orderId)).data.items[itemIndex].productId == productId;
+    }
+
     // --- USERS ---
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
@@ -80,9 +92,12 @@ service cloud.firestore {
     match /reviews/{reviewId} {
       allow read: if true;
 
-      // Solo usuarios logueados pueden crear reseñas
+      // Un comprador tiene una reseña identificada por usuario y producto, y puede editarla.
       allow create: if signedIn()
+        && request.resource.data.productId is string
+        && reviewId == request.auth.uid + '_' + request.resource.data.productId
         && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['productId','userId','userName','rating','comment','orderId','orderItemIndex','createdAt','updatedAt'])
         && request.resource.data.rating is int
         && request.resource.data.rating >= 1
         && request.resource.data.rating <= 5
@@ -90,9 +105,28 @@ service cloud.firestore {
         && request.resource.data.comment.size() > 0
         && request.resource.data.comment.size() <= 2000
         && request.resource.data.userName == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.displayName
-        && exists(/databases/$(database)/documents/products/$(request.resource.data.productId));
+        && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+        && request.resource.data.createdAt == request.time
+        && (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt == request.time)
+        && reviewPurchaseIsValid(request.resource.data.productId, request.resource.data.orderId, request.resource.data.orderItemIndex);
 
-      allow update: if false;
+      allow update: if signedIn()
+        && reviewId == request.auth.uid + '_' + resource.data.productId
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.productId == resource.data.productId
+        && request.resource.data.userName == resource.data.userName
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.keys().hasOnly(['productId','userId','userName','rating','comment','orderId','orderItemIndex','createdAt','updatedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating','comment','orderId','orderItemIndex','updatedAt'])
+        && request.resource.data.rating is int
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5
+        && request.resource.data.comment is string
+        && request.resource.data.comment.size() > 0
+        && request.resource.data.comment.size() <= 2000
+        && request.resource.data.updatedAt == request.time
+        && reviewPurchaseIsValid(request.resource.data.productId, request.resource.data.orderId, request.resource.data.orderItemIndex);
 
       // Admin o autor pueden borrar
       allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
