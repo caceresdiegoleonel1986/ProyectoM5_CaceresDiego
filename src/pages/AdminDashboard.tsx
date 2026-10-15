@@ -143,30 +143,30 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl py-8">
-      <h1 className="mb-6 text-2xl font-semibold">Administración</h1>
-      {error && <p className="mb-4 text-red-700" role="alert">{error}</p>}
+    <div className="admin-page">
+      <h1>Administración</h1>
+      {error && <p className="admin-alert" role="alert">{error}</p>}
 
-      <section id="analiticas" aria-label="Analíticas" className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <p>Productos: <strong>{analytics.productCount}</strong></p>
-        <p>Órdenes: <strong>{analytics.orderCount}</strong></p>
-        <p>Órdenes completadas: <strong>{analytics.completedOrderCount}</strong></p>
-        <p>Ingresos completados: <strong>${analytics.completedRevenue.toFixed(2)}</strong></p>
+      <section id="analiticas" aria-label="Analíticas" className="admin-stats">
+        <p className="admin-stat">Productos <strong>{analytics.productCount}</strong></p>
+        <p className="admin-stat">Órdenes <strong>{analytics.orderCount}</strong></p>
+        <p className="admin-stat">Órdenes completadas <strong>{analytics.completedOrderCount}</strong></p>
+        <p className="admin-stat admin-stat--accent">Ingresos completados <strong>${analytics.completedRevenue.toFixed(2)}</strong></p>
       </section>
 
-      <section aria-label="Gráficos de ventas" className="mb-10">
+      <section aria-label="Gráficos de ventas">
         <Suspense fallback={<Spinner size="sm" />}>
           <AnalyticsCharts revenueByDay={analytics.revenueByDay} topProducts={analytics.topProducts} />
         </Suspense>
       </section>
 
-      <section className="mb-10">
-        <h2 className="mb-4 text-xl font-semibold">{editingId ? "Editar producto" : "Nuevo producto"}</h2>
-        <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => void handleProductSubmit(event)}>
-          <label className="grid gap-1">Nombre
+      <section className="admin-card">
+        <h2>{editingId ? "Editar producto" : "Nuevo producto"}</h2>
+        <form className="admin-form" onSubmit={(event) => void handleProductSubmit(event)}>
+          <label>Nombre
             <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           </label>
-          <label className="grid gap-1">Categoría
+          <label>Categoría
             <select value={form.categoryId} onChange={(event) => {
               const selected = categories.find((category) => category.id === event.target.value);
               if (selected) setForm({ ...form, categoryId: selected.id });
@@ -174,31 +174,31 @@ export default function AdminDashboard() {
               {categories.map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}
             </select>
           </label>
-          <label className="grid gap-1">Descripción
+          <label>Descripción
             <input required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
           </label>
-          <label className="grid gap-1">Imagen
+          <label>Imagen
             <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => setImage(event.target.files?.[0] ?? null)} />
           </label>
-          <label className="grid gap-1">Precio
+          <label>Precio
             <input type="number" min="0.01" step="0.01" required value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} />
           </label>
-          <label className="grid gap-1">Stock
+          <label>Stock
             <input type="number" min="0" step="1" required value={form.stock} onChange={(event) => setForm({ ...form, stock: event.target.value })} />
           </label>
-          <div className="flex gap-3 sm:col-span-2">
+          <div className="admin-form__actions">
             <button className="button button--primary" type="submit" disabled={busy}>
               {busy ? <><Spinner size="sm" /> Guardando…</> : editingId ? "Guardar cambios" : "Crear producto"}
             </button>
-            {editingId && <button type="button" onClick={resetForm}>Cancelar edición</button>}
+            {editingId && <button type="button" className="button button--quiet" onClick={resetForm}>Cancelar edición</button>}
           </div>
         </form>
       </section>
 
-      <section id="productos" className="mb-10">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Productos</h2>
-          <label>Filtrar por categoría
+      <section id="productos" className="admin-card">
+        <div className="admin-card__head">
+          <h2>Productos</h2>
+          <label className="admin-filter">Filtrar por categoría
             <select value={productCategoryFilter} onChange={(event) => {
               const selected = categories.find((category) => category.id === event.target.value);
               setProductCategoryFilter(selected?.id ?? "");
@@ -208,13 +208,14 @@ export default function AdminDashboard() {
             </select>
           </label>
         </div>
-        <ul className="grid gap-3">
+        <ul className="admin-list">
           {products.map((product) => (
-            <li className="flex flex-wrap items-center justify-between gap-3 border-b py-3" key={product.id}>
+            <li className="admin-list__item" key={product.id}>
               <span>{product.name} · ${product.price} · Stock {product.stock}</span>
-              <span className="flex gap-2">
-                <button type="button" onClick={() => startEditing(product)}>Editar</button>
+              <span className="admin-list__actions">
+                <button type="button" className="button button--quiet button--compact" onClick={() => startEditing(product)}>Editar</button>
                 <ConfirmActionButton
+                  className="button button--danger button--compact"
                   title={`¿Eliminar ${product.name}?`}
                   description="El producto dejará de aparecer en el catálogo. Esta acción no se puede deshacer desde el panel."
                   confirmLabel="Eliminar producto"
@@ -229,6 +230,7 @@ export default function AdminDashboard() {
         {hasMore && (
           <button
             type="button"
+            className="button button--quiet"
             onClick={() => void fetchProducts({
               categoryId: productCategoryFilter || undefined,
               cursor: lastDoc,
@@ -239,10 +241,10 @@ export default function AdminDashboard() {
         )}
       </section>
 
-      <section id="ordenes">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Últimas 100 órdenes</h2>
-          <label>Estado
+      <section id="ordenes" className="admin-card">
+        <div className="admin-card__head">
+          <h2>Últimas 100 órdenes</h2>
+          <label className="admin-filter">Estado
             <select value={statusFilter} onChange={(event) => {
               const selected = ORDER_STATUSES.find((status) => status === event.target.value);
               setStatusFilter(selected ?? "");
@@ -252,13 +254,14 @@ export default function AdminDashboard() {
             </select>
           </label>
         </div>
-        <ul className="grid gap-3">
+        <ul className="admin-list">
           {visibleOrders.map((order) => (
-            <li className="flex flex-wrap items-center justify-between gap-3 border-b py-3" key={order.id}>
-              <span>{order.customerName || order.userEmail} · ${order.total.toFixed(2)} · {ORDER_STATUS_LABELS[order.status]}</span>
-              <span className="flex gap-2">
+            <li className="admin-list__item" key={order.id}>
+              <span>{order.customerName || order.userEmail} · ${order.total.toFixed(2)} · <span className={`status-badge status-badge--${order.status}`}>{ORDER_STATUS_LABELS[order.status]}</span></span>
+              <span className="admin-list__actions">
                 {order.status === "pending" && (
                   <ConfirmActionButton
+                    className="button button--primary button--compact"
                     title="¿Pasar esta orden a en proceso?"
                     description="Indica que la orden está siendo preparada."
                     confirmLabel="Pasar a en proceso"
@@ -270,6 +273,7 @@ export default function AdminDashboard() {
                 )}
                 {order.status === "processing" && (
                   <ConfirmActionButton
+                    className="button button--primary button--compact"
                     title="¿Marcar esta orden como completada?"
                     description="Indica que la orden fue entregada."
                     confirmLabel="Marcar completada"
@@ -281,6 +285,7 @@ export default function AdminDashboard() {
                 )}
                 {order.status !== "cancelled" && order.status !== "completed" && (
                   <ConfirmActionButton
+                    className="button button--danger button--compact"
                     title="¿Cancelar esta orden?"
                     description="La orden pasará a cancelada. El inventario descontado al crearla no se restaura automáticamente."
                     confirmLabel="Cancelar orden"
