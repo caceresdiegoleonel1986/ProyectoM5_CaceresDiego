@@ -22,6 +22,11 @@ export function ProductsPage() {
   const [categoryId, setCategoryId] = useState("");
   const debouncedSearch = useDebounce(searchText, 400);
   const searchPrefix = debouncedSearch.trim().toLowerCase();
+  const firstSearchWord = searchPrefix.split(/\s+/)[0];
+  const searchedCategory = firstSearchWord.length >= 2
+    ? CATEGORIES.find((category) => category.id && category.label.toLowerCase().startsWith(firstSearchWord))
+    : undefined;
+  const activeCategoryId = searchedCategory?.id || categoryId;
   const {
     products,
     loading,
@@ -31,8 +36,8 @@ export function ProductsPage() {
     loadMore,
     retry,
   } = useProductsRealtime(
-    categoryId || undefined,
-    searchPrefix.length >= 2 ? searchPrefix : undefined,
+    activeCategoryId || undefined,
+    searchPrefix.length >= 2 && !searchedCategory ? searchPrefix : undefined,
   );
 
   const handleAddToCart = (productId: string) => {
@@ -58,8 +63,11 @@ export function ProductsPage() {
         />
         <select
           aria-label="Categoría"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
+          value={activeCategoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            if (searchedCategory) setSearchText("");
+          }}
         >
           {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
         </select>
