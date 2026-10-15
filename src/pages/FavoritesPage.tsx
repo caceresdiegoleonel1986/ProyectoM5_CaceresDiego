@@ -39,11 +39,11 @@ export default function FavoritesPage() {
   }
 
   return (
-    <section className="py-6">
-      <h1 className="mb-5 text-2xl font-semibold">Tus favoritos</h1>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <section className="page catalogPage">
+      <h1>Tus favoritos</h1>
+      <div className="favorites-grid">
         {products.map((product) => (
-          <article className="rounded-md border border-[var(--border)] bg-[var(--card)] p-4" key={product.id}>
+          <article key={product.id}>
             <ProductCard
               layout="grid"
               product={product}
