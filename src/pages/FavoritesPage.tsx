@@ -53,7 +53,9 @@ export default function FavoritesPage() {
                 else removeFavorite(id);
               }}
             />
-            <button type="button" onClick={() => removeFavorite(product.id)}>Quitar de favoritos</button>
+            <button className="favorites-remove" type="button" aria-pressed="true" onClick={() => removeFavorite(product.id)}>
+              Quitar de favoritos
+            </button>
           </article>
         ))}
       </div>
