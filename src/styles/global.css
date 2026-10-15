@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "./theme.css";
+@import "./admin.css";
+@import "./shop.css";
 
 @layer base {
   * {
@@ -96,10 +98,10 @@
   z-index: 30;
   top: 0;
   padding: 0.6rem 0.7rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(15, 27, 47, 0.96);
-  color: #f7f9fc;
-  box-shadow: 0 8px 28px rgba(10, 25, 47, 0.16);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--foreground);
+  box-shadow: 0 6px 24px rgba(23, 34, 56, 0.06);
   backdrop-filter: blur(16px);
 }
 
@@ -118,10 +120,8 @@
   width: fit-content;
   align-items: center;
   padding: 0.25rem 0.45rem;
-  border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 999px;
   background: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
 }
 
 .site-brand img {
@@ -151,21 +151,20 @@
   padding: 0.42rem 0.5rem;
   border: 1px solid transparent;
   border-radius: 999px;
-  color: #d4dceb;
+  color: var(--muted);
   font-size: 0.75rem;
-  font-weight: 620;
+  font-weight: 650;
   white-space: nowrap;
 }
 
-.site-nav__link:hover,
-.site-nav__link.is-active {
-  border-color: rgba(255, 255, 255, 0.13);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+.site-nav__link:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--foreground);
 }
 
 .site-nav__link.is-active {
-  box-shadow: inset 0 -2px 0 var(--secondary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  color: var(--primary);
 }
 
 .site-nav__count {
@@ -214,21 +213,21 @@
 .account-identity__name {
   max-width: 88px;
   overflow: hidden;
-  color: #f3f6fb;
+  color: var(--foreground);
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .role-badge {
-  color: #b8c5d8;
+  color: var(--muted);
   font-size: 0.63rem;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
 
 .role-badge--admin {
-  color: #ffad79;
+  color: var(--secondary);
 }
 
 .button {
@@ -246,24 +245,34 @@
 }
 
 .button--primary {
-  background: #f18449;
-  color: #23170f;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .button--primary:hover {
-  background: #ffa16b;
-  color: #23170f;
+  background: var(--primary-hover);
+  color: var(--primary-foreground);
 }
 
 .button--quiet {
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: #eef3fb;
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--foreground);
 }
 
 .button--quiet:hover {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.button--danger {
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  color: var(--danger);
+}
+
+.button--danger:hover {
+  background: color-mix(in srgb, var(--danger) 18%, var(--surface));
 }
 
 .button--compact {
@@ -279,15 +288,15 @@
   height: 36px;
   place-items: center;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.19);
+  border: 1px solid var(--border);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: var(--surface);
+  color: var(--foreground);
   font-size: 1.35rem;
 }
 
 .icon-button:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--background);
 }
 
 .app-main {
@@ -355,10 +364,12 @@
 .catalogPage article {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.55rem;
+  gap: 0.6rem;
+  align-content: start;
   overflow: hidden;
-  border-color: var(--border);
-  border-radius: 16px;
+  padding: 0.75rem 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
   background: var(--surface-raised);
   box-shadow: var(--shadow-sm);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
@@ -384,6 +395,7 @@
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
+  border-radius: 14px;
   background: var(--background);
 }
 
@@ -402,6 +414,12 @@
 
 .catalogPage article > .card-grid > p {
   color: var(--muted);
+}
+
+.catalogPage article > .card-grid > .card-price {
+  color: var(--foreground);
+  font-size: 1.1rem;
+  font-weight: 750;
 }
 
 .catalogPage article > .card-grid > .btn {
@@ -435,6 +453,19 @@
 
 .catalogPage article > section {
   grid-column: 1 / -1;
+  margin-top: 0.25rem;
+}
+
+.catalogPage article > section > button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
+.catalogPage article > section > button:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .card-list img {
