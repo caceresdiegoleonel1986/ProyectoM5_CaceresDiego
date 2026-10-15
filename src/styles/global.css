@@ -451,6 +451,30 @@
   background: color-mix(in srgb, var(--secondary) 12%, var(--surface));
 }
 
+.favorites-grid article > .card-grid > .btn {
+  padding-inline: 0.65rem;
+  font-size: 0.8rem;
+}
+
+.favorites-grid article > .favorites-remove {
+  grid-column: 2;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: none;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.favorites-grid article > .favorites-remove:hover {
+  border-color: color-mix(in srgb, var(--secondary) 65%, var(--border));
+  background: color-mix(in srgb, var(--secondary) 12%, var(--surface));
+}
+
 .catalogPage article > section {
   grid-column: 1 / -1;
   margin-top: 0.25rem;
