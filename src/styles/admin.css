@@ -125,6 +125,10 @@
   box-shadow: var(--shadow-sm);
 }
 
+.admin-product-form {
+  scroll-margin-top: 10rem;
+}
+
 .admin-card__head {
   display: flex;
   flex-wrap: wrap;
@@ -179,6 +183,10 @@
 }
 
 @media (min-width: 640px) {
+  .admin-product-form {
+    scroll-margin-top: 6rem;
+  }
+
   .admin-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
