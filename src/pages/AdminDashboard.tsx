@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAdminProducts } from "../contexts/admin/useAdminProducts";
 import { useAdminOrders } from "../contexts/admin/useAdminOrders";
 import { uploadFileSecurely } from "../services/uploadService";
@@ -37,6 +37,8 @@ const emptyForm: ProductForm = {
 export default function AdminDashboard() {
   const { products, lastDoc, hasMore, fetchProducts, createProduct, updateProduct, deleteProduct } = useAdminProducts();
   const { orders, analytics, fetchOrders, fetchAnalytics, updateOrderStatus } = useAdminOrders();
+  const productFormRef = useRef<HTMLElement>(null);
+  const productNameInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [image, setImage] = useState<File | null>(null);
@@ -80,6 +82,8 @@ export default function AdminDashboard() {
       categoryId: product.categoryId,
     });
     setImage(null);
+    productFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    productNameInputRef.current?.focus({ preventScroll: true });
   };
 
   const resetForm = () => {
@@ -160,11 +164,11 @@ export default function AdminDashboard() {
         </Suspense>
       </section>
 
-      <section className="admin-card">
+      <section ref={productFormRef} className="admin-card admin-product-form">
         <h2>{editingId ? "Editar producto" : "Nuevo producto"}</h2>
         <form className="admin-form" onSubmit={(event) => void handleProductSubmit(event)}>
           <label>Nombre
-            <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
+            <input ref={productNameInputRef} required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           </label>
           <label>Categoría
             <select value={form.categoryId} onChange={(event) => {
