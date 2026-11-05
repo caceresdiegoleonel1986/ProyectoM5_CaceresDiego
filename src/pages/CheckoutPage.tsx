@@ -4,12 +4,13 @@ import { EmptyState } from "../components/states";
 import { useCart } from "../contexts/cart/useCart";
 import { useAuth } from "../contexts/auth/useAuth";
 import { createOrder } from "../services/orderService";
+import { OrderPriceChangedError } from "../services/orderErrors";
 import { simulatePayment, type CardDetails } from "../services/paymentService";
 import type { ShippingAddress } from "../types/order.types";
 import Spinner from "../components/ui/Spinner";
 
 export function CheckoutPage() {
-  const { items, clearCart, totalPrice } = useCart();
+  const { items, clearCart, totalPrice, updatePrices } = useCart();
   const { user } = useAuth();
   const [orderId, setOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,7 @@ export function CheckoutPage() {
       setOrderId(order.id);
       clearCart();
     } catch (err) {
+      if (err instanceof OrderPriceChangedError) updatePrices(err.changes);
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
