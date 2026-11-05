@@ -4,6 +4,7 @@ import { getOrdersByUser } from "../services/orderService";
 import type { Order } from "../types/order.types";
 import { ORDER_STATUS_LABELS } from "../types/order.types";
 import { EmptyState, ErrorState, LoadingState } from "../components/states";
+import { formatPrice } from "../utils/formatPrice";
 
 export default function MyOrdersPage() {
   const { user } = useAuth();
@@ -45,7 +46,7 @@ export default function MyOrdersPage() {
               <strong>Pedido {order.id}</strong>
               <span className={`status-badge status-badge--${order.status}`}>{ORDER_STATUS_LABELS[order.status]}</span>
             </div>
-            <p>{order.createdAt.toLocaleDateString()} · ${order.total.toFixed(2)}</p>
+            <p>{order.createdAt.toLocaleDateString()} · {formatPrice(order.total)}</p>
             <details>
               <summary>Ver detalle</summary>
               <ul className="order-item-list">
@@ -57,7 +58,7 @@ export default function MyOrdersPage() {
                       <span className="order-item__thumbnail order-item__thumbnail--empty" role="img" aria-label={`Imagen no disponible para ${item.name}`} />
                     )}
                     <span className="order-item__text">
-                      {item.name} × {item.quantity} — ${(item.priceAtPurchase * item.quantity).toFixed(2)}
+                      {item.name} × {item.quantity} — {formatPrice(item.priceAtPurchase * item.quantity)}
                     </span>
                   </li>
                 ))}

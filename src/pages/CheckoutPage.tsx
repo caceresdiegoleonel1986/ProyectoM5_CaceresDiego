@@ -9,6 +9,7 @@ import { loadShippingAddress, saveShippingAddress } from "../services/userDataSe
 import { simulatePayment, type CardDetails } from "../services/paymentService";
 import type { ShippingAddress } from "../types/order.types";
 import Spinner from "../components/ui/Spinner";
+import { formatPrice } from "../utils/formatPrice";
 
 export function CheckoutPage() {
   const { items, clearCart, totalPrice, syncing, updatePrices } = useCart();
@@ -99,11 +100,11 @@ export function CheckoutPage() {
         <ul className="summary-list">
           {items.map(item => (
             <li key={item.product.id}>
-              {item.product.name} x {item.quantity} — ${(item.product.price * item.quantity).toFixed(2)}
+              {item.product.name} x {item.quantity} — {formatPrice(item.product.price * item.quantity)}
             </li>
           ))}
         </ul>
-        <p className="checkout-total">Total: ${totalPrice.toFixed(2)}</p>
+        <p className="checkout-total">Total: {formatPrice(totalPrice)}</p>
         {!user && <p>Inicia sesión antes de realizar el pedido.</p>}
       </section>
       <form className="panel form-grid" onSubmit={(event) => void handleCheckout(event)}>
@@ -189,7 +190,7 @@ export function CheckoutPage() {
           </label>
         </div>
         <button className="button button--primary" type="submit" disabled={loading || !items.length || !user}>
-          {loading ? <><Spinner size="sm" /> Procesando pago…</> : `Pagar $${totalPrice.toFixed(2)}`}
+          {loading ? <><Spinner size="sm" /> Procesando pago…</> : `Pagar ${formatPrice(totalPrice)}`}
         </button>
       </form>
       {error && <p role="alert" className="notice notice--error">{error}</p>}

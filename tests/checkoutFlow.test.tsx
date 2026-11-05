@@ -111,8 +111,8 @@ describe("flujo integral: carrito → checkout → orden", () => {
     await goToCheckoutWithOneItem();
     fillShipping();
     fillCard("4242 4242 4242 4242");
-    await waitFor(() => expect(screen.getByRole("button", { name: /Pagar \$50\.00/ })).toHaveProperty("disabled", false));
-    fireEvent.click(screen.getByRole("button", { name: /Pagar \$50\.00/ }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /Pagar \$50,00/ })).toHaveProperty("disabled", false));
+    fireEvent.click(screen.getByRole("button", { name: /Pagar \$50,00/ }));
 
     await screen.findByText("order-123", {}, { timeout: 3000 });
     expect(orderMocks.createOrder).toHaveBeenCalledTimes(1);
@@ -212,12 +212,12 @@ describe("flujo integral: carrito → checkout → orden", () => {
     await goToCheckoutWithOneItem();
     fillShipping();
     fillCard("4242 4242 4242 4242");
-    fireEvent.click(screen.getByRole("button", { name: /Pagar \$50\.00/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Pagar \$50,00/ }));
 
     expect((await screen.findByRole("alert", {}, { timeout: 3000 })).textContent).toContain("Cambió el precio de Kairo Runner");
-    expect(screen.getByRole("button", { name: /Pagar \$75\.00/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Pagar \$75,00/ })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: /Pagar \$75\.00/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Pagar \$75,00/ }));
 
     await screen.findByText("order-123", {}, { timeout: 3000 });
     expect(orderMocks.createOrder.mock.calls[1][0]).toEqual([expect.objectContaining({ priceAtPurchase: 75 })]);

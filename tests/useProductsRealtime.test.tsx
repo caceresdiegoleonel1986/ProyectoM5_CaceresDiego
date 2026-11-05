@@ -74,4 +74,48 @@ describe("useProductsRealtime", () => {
     unmount();
     expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
+
+  describe("búsqueda", () => {
+    const named = (id: string, name: string): FakeDocument => ({
+      id,
+      data: () => ({ ...createProduct(id), name, nameLower: name.toLowerCase() }),
+    });
+
+    beforeEach(() => {
+      firestoreMocks.onSnapshot.mockImplementation((_query, listener) => {
+        queueMicrotask(() => (listener as (snapshot: FakeSnapshot) => void)({
+          docs: [named("a", "Adidas NMD"), named("b", "Adidas Stan Smith"), named("c", "Bose 700")],
+        }));
+        return vi.fn();
+      });
+    });
+
+    it("encuentra una palabra en cualquier parte del nombre y no ofrece más páginas", async () => {
+      const { result } = renderHook(() => useProductsRealtime(undefined, "stan", 2));
+
+      await waitFor(() => expect(result.current.products.map((product) => product.id)).toEqual(["b"]));
+      expect(firestoreMocks.limit).toHaveBeenCalledWith(500);
+      expect(result.current.hasMore).toBe(false);
+    });
+
+    it("cambiar el texto filtra lo cargado sin volver a consultar Firestore", async () => {
+      const { result, rerender } = renderHook(
+        ({ search }) => useProductsRealtime(undefined, search, 2),
+        { initialProps: { search: "adidas" } },
+      );
+      await waitFor(() => expect(result.current.products.map((product) => product.id)).toEqual(["a", "b"]));
+
+      rerender({ search: "bose" });
+
+      expect(result.current.products.map((product) => product.id)).toEqual(["c"]);
+      expect(firestoreMocks.onSnapshot).toHaveBeenCalledTimes(1);
+    });
+
+    it("mantiene el filtro de categoría al buscar", async () => {
+      const { result } = renderHook(() => useProductsRealtime("zapatillas", "stan", 2));
+
+      await waitFor(() => expect(result.current.products).toHaveLength(1));
+      expect(firestoreMocks.where).toHaveBeenCalledWith("categoryId", "==", "zapatillas");
+    });
+  });
 });
