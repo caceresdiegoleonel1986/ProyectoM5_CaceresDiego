@@ -18,6 +18,20 @@ E-commerce con panel de administración, hecho con React, TypeScript, Firebase (
 
 ![Pantalla de ingreso de KairoShop](public/kairoshop-login.png)
 
+**Panel de administración: métricas y gráficos**
+
+![Métricas y gráficos de ventas del panel de administración](public/kairoshop-admin-metricas.png)
+
+**Panel de administración: órdenes**
+
+![Gestión de estados de órdenes en el panel de administración](public/kairoshop-admin-ordenes.png)
+
+**Panel de administración: productos**
+
+![Listado de productos con stock en el panel de administración](public/kairoshop-admin-productos.png)
+
+Las capturas del panel usan datos de demostración cargados en los emuladores de Firebase, no ventas reales. En el catálogo, los productos y sus imágenes son de ejemplo: las fotos no corresponden a cada producto.
+
 ## Funcionalidades
 
 - **Cliente:** catálogo con búsqueda (debounce) y filtro por categoría, paginación, favoritos y carrito guardados en la cuenta, checkout con pago simulado, historial de pedidos y reseñas.
