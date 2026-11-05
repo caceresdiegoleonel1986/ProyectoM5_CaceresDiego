@@ -108,6 +108,8 @@ Con sesión iniciada se guardan en `carts/{uid}` y `favorites/{uid}`, que solo p
 
 Sin sesión se usan en `localStorage`. Al iniciar sesión se fusionan con la cuenta (sin duplicar, con la cantidad mayor) y al cerrarla se limpian del dispositivo. No se actualizan en vivo: con la misma cuenta abierta en dos dispositivos, gana el último cambio.
 
+La dirección de envío se guarda en `shippingAddresses/{uid}`, también privada. Se actualiza después de cada compra exitosa y autocompleta el checkout siguiente. Cada orden conserva su propia copia, así que cambiarla no altera pedidos anteriores.
+
 ## Analíticas, paginación y reseñas
 
 El dashboard muestra conteos agregados (`getCountFromServer`, `getAggregateFromServer`) y gráficos con ingresos por día y productos más vendidos sobre las últimas 200 órdenes no canceladas. El catálogo usa `onSnapshot` en la primera página y pagina con `limit()` y `startAfter()`. Las reseñas viven en la colección `reviews` y el promedio se guarda en el producto.
