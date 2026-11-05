@@ -146,6 +146,8 @@ export default function AdminDashboard() {
       setError(cause instanceof Error ? cause.message : "No se pudo actualizar la orden.");
       return;
     }
+    void fetchAnalytics()
+      .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "No se pudieron recargar las métricas."));
     if (status === "cancelled") {
       // El stock cambió: recarga la lista para que editar un producto no lo pise con un valor viejo.
       void fetchProducts(productCategoryFilter ? { categoryId: productCategoryFilter } : {})

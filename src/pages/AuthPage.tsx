@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/auth/useAuth";
 import Spinner from "../components/ui/Spinner";
+import { getAuthErrorMessage } from "../services/authErrors";
 
 type RedirectState = { from?: string };
 
@@ -24,7 +25,7 @@ export default function AuthPage() {
       await action();
       navigate(redirectPath, { replace: true });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No se pudo completar la autenticación.");
+      setError(getAuthErrorMessage(cause));
     } finally {
       setSubmitting(false);
     }
