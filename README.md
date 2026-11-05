@@ -62,6 +62,7 @@ Para probar la subida de imágenes en local, usa `vercel dev` o define `VITE_UPL
 | `npm run lint` | ESLint. |
 | `npm run test` | Tests con Vitest. |
 | `npm run test:coverage` | Tests con reporte de cobertura. |
+| `npm run test:rules` | Tests de `firestore.rules` en el emulador. Requiere Java y Firebase CLI. |
 | `npm run seed` | Carga datos de ejemplo en Firestore. |
 
 ## Tests
