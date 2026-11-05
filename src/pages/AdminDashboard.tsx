@@ -143,6 +143,12 @@ export default function AdminDashboard() {
       await updateOrderStatus(orderId, status);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No se pudo actualizar la orden.");
+      return;
+    }
+    if (status === "cancelled") {
+      // El stock cambió: recarga la lista para que editar un producto no lo pise con un valor viejo.
+      void fetchProducts(productCategoryFilter ? { categoryId: productCategoryFilter } : {})
+        .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "No se pudieron recargar los productos."));
     }
   };
 
@@ -291,7 +297,7 @@ export default function AdminDashboard() {
                   <ConfirmActionButton
                     className="button button--danger button--compact"
                     title="¿Cancelar esta orden?"
-                    description="La orden pasará a cancelada. El inventario descontado al crearla no se restaura automáticamente."
+                    description="La orden pasará a cancelada y sus productos volverán al stock. Esta acción no se puede deshacer."
                     confirmLabel="Cancelar orden"
                     onConfirm={() => changeOrderStatus(order.id, "cancelled")}
                   >

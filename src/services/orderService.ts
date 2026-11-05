@@ -3,7 +3,7 @@ import {
   getDoc,
   getDocs,
   doc,
-  updateDoc,
+  increment,
   query,
   where,
   orderBy,
@@ -111,33 +111,54 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
   return snap.exists() ? snap.data() : null;
 }
 
+/**
+ * Cambia el estado de la orden en una transacción. Al cancelar devuelve el stock de sus productos,
+ * omitiendo los eliminados. Una orden cancelada no admite más cambios, para no devolverlo dos veces.
+ */
 export async function updateOrderStatus(
   orderId: string,
   status: OrderStatus,
   note?: string
 ): Promise<void> {
   const docRef = doc(db, "orders", orderId).withConverter(orderConverter);
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) {
-    throw new Error("Orden no encontrada");
-  }
 
-  const order = snap.data();
-  const newHistory: OrderStatusHistory[] = [
-    ...(order.history || []),
-    {
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(docRef);
+    if (!snap.exists()) {
+      throw new Error("Orden no encontrada");
+    }
+
+    const order = snap.data();
+    if (order.status === "cancelled") {
+      throw new Error("La orden ya está cancelada.");
+    }
+
+    const itemsToRestock = status === "cancelled" ? order.items : [];
+    const products = await Promise.all(
+      itemsToRestock.map(({ productId }) => tx.get(doc(db, "products", productId)))
+    );
+    products.forEach((product, index) => {
+      if (product.exists()) {
+        tx.update(product.ref, { stock: increment(itemsToRestock[index].quantity) });
+      }
+    });
+
+    const newHistory: OrderStatusHistory[] = [
+      ...(order.history || []),
+      {
+        status,
+        changedAt: new Date(),
+        note: note || `Estado actualizado a ${status}`,
+      },
+    ];
+
+    tx.update(doc(db, "orders", orderId), {
       status,
-      changedAt: new Date(),
-      note: note || `Estado actualizado a ${status}`,
-    },
-  ];
-
-  await updateDoc(doc(db, "orders", orderId), {
-    status,
-    history: newHistory.map((h) => ({
-      status: h.status,
-      changedAt: Timestamp.fromDate(h.changedAt),
-      note: h.note || "",
-    })),
+      history: newHistory.map((h) => ({
+        status: h.status,
+        changedAt: Timestamp.fromDate(h.changedAt),
+        note: h.note || "",
+      })),
+    });
   });
 }

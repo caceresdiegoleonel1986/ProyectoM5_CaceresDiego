@@ -30,6 +30,7 @@ const payment = { method: "simulated-card" as const, cardLast4: "4242" };
 
 let env: RulesTestEnvironment;
 let createOrder: typeof import("../src/services/orderService").createOrder;
+let updateOrderStatus: typeof import("../src/services/orderService").updateOrderStatus;
 let saveReview: typeof import("../src/services/reviewService").saveReview;
 let loadCart: typeof import("../src/services/userDataService").loadCart;
 let saveCart: typeof import("../src/services/userDataService").saveCart;
@@ -105,7 +106,7 @@ beforeAll(async () => {
     firestore: { rules: readFileSync("firestore.rules", "utf8") },
   });
   connection.db = env.unauthenticatedContext().firestore();
-  ({ createOrder } = await import("../src/services/orderService"));
+  ({ createOrder, updateOrderStatus } = await import("../src/services/orderService"));
   ({ saveReview } = await import("../src/services/reviewService"));
   ({ loadCart, saveCart, loadFavorites, saveFavorites } = await import("../src/services/userDataService"));
 });
@@ -151,6 +152,72 @@ describe("checkout real contra las reglas", () => {
     await assertSucceeds(createOrder(items, address, buyer, payment));
 
     expect(await read("products/p1")).toMatchObject({ stock: 3 });
+  });
+});
+
+describe("cancelación real contra las reglas", () => {
+  beforeEach(() => {
+    useServicesAs("ana");
+  });
+
+  async function buy(quantity: number) {
+    const { id } = await createOrder(
+      [{ productId: "p1", name: "Zapa", priceAtPurchase: 100, quantity }],
+      address,
+      { id: "ana", email: "ana@test.com" },
+      payment,
+    );
+    return id;
+  }
+
+  it("el admin cancela y el stock vuelve", async () => {
+    const id = await buy(2);
+    expect(await read("products/p1")).toMatchObject({ stock: 3 });
+
+    useServicesAs("admin");
+    await assertSucceeds(updateOrderStatus(id, "cancelled"));
+
+    expect(await read("products/p1")).toMatchObject({ stock: 5 });
+    expect(await read(`orders/${id}`)).toMatchObject({ status: "cancelled" });
+  });
+
+  it("cancelar dos veces no suma stock de más", async () => {
+    const id = await buy(2);
+    useServicesAs("admin");
+    await updateOrderStatus(id, "cancelled");
+
+    await expect(updateOrderStatus(id, "cancelled")).rejects.toThrow("ya está cancelada");
+
+    expect(await read("products/p1")).toMatchObject({ stock: 5 });
+  });
+
+  it("cancela aunque el producto se haya eliminado", async () => {
+    const id = await buy(1);
+    await env.withSecurityRulesDisabled(async (context) => {
+      await deleteDoc(doc(context.firestore() as unknown as Firestore, "products/p1"));
+    });
+
+    useServicesAs("admin");
+    await assertSucceeds(updateOrderStatus(id, "cancelled"));
+
+    expect(await read("products/p1")).toBeUndefined();
+    expect(await read(`orders/${id}`)).toMatchObject({ status: "cancelled" });
+  });
+
+  it("un cliente no puede cancelar ni siquiera su propia orden", async () => {
+    const id = await buy(2);
+
+    await assertFails(updateOrderStatus(id, "cancelled"));
+
+    expect(await read("products/p1")).toMatchObject({ stock: 3 });
+    expect(await read(`orders/${id}`)).toMatchObject({ status: "pending" });
+  });
+
+  it("un cliente no puede subir stock simulando una cancelación", async () => {
+    const id = await buy(2);
+
+    await assertFails(updateDoc(doc(as("ana"), "products/p1"), { stock: 5 }));
+    await assertFails(updateDoc(doc(as("ana"), `orders/${id}`), { status: "cancelled" }));
   });
 });
 
