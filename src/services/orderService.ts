@@ -99,12 +99,6 @@ export async function createOrder(
   return { id: orderRef.id };
 }
 
-export async function getAllOrders(): Promise<Order[]> {
-  const q = query(ordersRef, orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data());
-}
-
 export async function getOrdersByUser(userId: string): Promise<Order[]> {
   const q = query(ordersRef, where("userId", "==", userId), orderBy("createdAt", "desc"), limit(50));
   const snap = await getDocs(q);
