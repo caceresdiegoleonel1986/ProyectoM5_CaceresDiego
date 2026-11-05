@@ -40,7 +40,8 @@ describe("LogoutConfirmButton", () => {
     render(<LogoutConfirmButton>Salir</LogoutConfirmButton>);
 
     fireEvent.click(screen.getByRole("button", { name: "Salir" }));
-    expect(screen.getByRole("dialog", { name: "¿Quieres cerrar sesión?" })).toBeTruthy();
+    const dialog = screen.getByRole("dialog", { name: "¿Quieres cerrar sesión?" });
+    expect(dialog.textContent).toContain("quedan guardados en tu cuenta");
     expect(logout).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Sí, cerrar sesión" }));

@@ -49,7 +49,7 @@ export default function LogoutConfirmButton({ className, children = "Cerrar sesi
           </>
         )}
       >
-        <p>Tu carrito de este navegador se conservará. Tendrás que volver a identificarte para acceder a tu cuenta.</p>
+        <p>Tu carrito y tus favoritos quedan guardados en tu cuenta y se quitarán de este navegador. Volverán cuando inicies sesión.</p>
         {error && <p className="form-error" role="alert">{error}</p>}
       </Modal>
     </>
