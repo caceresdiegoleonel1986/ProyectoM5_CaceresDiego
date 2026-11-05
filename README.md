@@ -72,9 +72,9 @@ La suite cubre reducers, hooks, providers de Auth y productos, guards de rutas, 
 
 El registro asigna siempre `customer`: no se acepta un rol desde el navegador ni se infiere del email. Para habilitar una cuenta admin, asigna `role: "admin"` al documento `users/{uid}` desde Firebase Console.
 
-El checkout (`createOrder`) corre en una transacción de Firestore: lee precio y stock actuales, descuenta stock y crea la orden. Las reglas limitan a un cliente a bajar `stock` y a actualizar `rating` y `ratingCount`, y exigen `userId` propio, estado `pending` y `createdAt` del servidor.
+El checkout (`createOrder`) corre en una transacción de Firestore: lee precio y stock actuales, descuenta stock y crea la orden. Si el precio cambió desde que el cliente lo vio, no escribe nada y pide confirmar el nuevo total. Las reglas exigen en la orden `userId` propio, estado `pending` y `createdAt` del servidor. Un cliente solo puede bajar `stock` si en la misma transacción crea una orden propia con ese producto, esa cantidad y el precio actual. Solo puede cambiar `rating` y `ratingCount` si en la misma transacción escribe su reseña y el promedio coincide con ella.
 
-**Limitación del plan gratuito:** sin backend, las reglas no pueden recorrer los ítems de una orden para recalcular el total, así que un cliente malicioso podría enviar un total distinto. Cerrar ese hueco requiere Cloud Functions (plan Blaze). Lo mismo aplica al promedio de ratings, que se actualiza desde el cliente en la misma transacción que la reseña.
+**Limitación del plan gratuito:** sin backend, las reglas no pueden recorrer los ítems de una orden para recalcular el total, así que un cliente malicioso podría enviar un total distinto o crear una orden sin pago real. Esa orden queda registrada a su nombre, pero le permitiría bajar stock y publicar una reseña. Cerrar ese hueco requiere Cloud Functions (plan Blaze).
 
 ### Subida de imágenes
 
