@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { orderConverter } from "./converters/orderConverter";
+import { OrderPriceChangedError, type OrderPriceChange } from "./orderErrors";
 import type { Order, OrderItem, OrderStatus, OrderStatusHistory, ShippingAddress, SimulatedPayment } from "../types/order.types";
 
 const ordersRef = collection(db, "orders").withConverter(orderConverter);
@@ -22,7 +23,8 @@ export type OrderBuyer = { id: string; email?: string; displayName?: string };
 
 /**
  * Crea la orden y descuenta stock en una transacción de Firestore (plan Spark, sin Functions).
- * Precio y stock se leen dentro de la transacción; el total no viene del carrito del cliente.
+ * Precio y stock se leen dentro de la transacción; si el precio difiere del que vio el cliente
+ * (priceAtPurchase), la compra se rechaza sin escribir para que confirme el nuevo total.
  */
 export async function createOrder(
   items: OrderItem[],
@@ -35,8 +37,10 @@ export async function createOrder(
   }
 
   const quantities = new Map<string, number>();
-  for (const { productId, quantity } of items) {
+  const expectedPrices = new Map<string, number>();
+  for (const { productId, quantity, priceAtPurchase } of items) {
     quantities.set(productId, (quantities.get(productId) ?? 0) + quantity);
+    expectedPrices.set(productId, priceAtPurchase);
   }
 
   const orderRef = doc(collection(db, "orders"));
@@ -46,6 +50,7 @@ export async function createOrder(
     );
 
     let total = 0;
+    const priceChanges: OrderPriceChange[] = [];
     const orderItems: OrderItem[] = snaps.map((snap) => {
       const data = snap.data();
       const quantity = quantities.get(snap.id) ?? 0;
@@ -53,8 +58,10 @@ export async function createOrder(
       if (typeof data.stock !== "number" || data.stock < quantity) {
         throw new Error(`Stock insuficiente para ${data.name}.`);
       }
+      if (data.price !== expectedPrices.get(snap.id)) {
+        priceChanges.push({ productId: snap.id, name: data.name, price: data.price });
+      }
       total += data.price * quantity;
-      tx.update(snap.ref, { stock: data.stock - quantity });
       return {
         productId: snap.id,
         name: data.name,
@@ -62,6 +69,17 @@ export async function createOrder(
         quantity,
         ...(data.imageUrl ? { imageUrl: data.imageUrl } : {}),
       };
+    });
+    if (priceChanges.length > 0) throw new OrderPriceChangedError(priceChanges);
+    total = Math.round(total * 100) / 100;
+
+    // Las reglas usan lastOrderId y lastOrderItemIndex para comprobar el descuento contra esta orden.
+    snaps.forEach((snap, index) => {
+      tx.update(snap.ref, {
+        stock: snap.data()?.stock - orderItems[index].quantity,
+        lastOrderId: orderRef.id,
+        lastOrderItemIndex: index,
+      });
     });
 
     tx.set(orderRef, {

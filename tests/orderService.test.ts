@@ -24,11 +24,12 @@ vi.mock("../src/services/firebase", () => ({ db: {} }));
 vi.mock("../src/services/converters/orderConverter", () => ({ orderConverter: {} }));
 
 import { createOrder } from "../src/services/orderService";
+import { OrderPriceChangedError } from "../src/services/orderErrors";
 
 const address = { fullName: "Ana", address: "Calle 1", city: "BA", postalCode: "1000" };
 const buyer = { id: "u1", email: "ana@test.com" };
 const payment = { method: "simulated-card" as const, cardLast4: "4242" };
-const line = (productId: string, quantity: number) => ({ productId, name: "x", priceAtPurchase: 1, quantity });
+const line = (productId: string, quantity: number, priceAtPurchase = 100) => ({ productId, name: "x", priceAtPurchase, quantity });
 
 function productSnap(id: string, data: Record<string, unknown> | undefined) {
   return { id, ref: { id }, data: () => data };
@@ -50,10 +51,29 @@ describe("createOrder", () => {
     const result = await createOrder([line("p1", 1), line("p1", 2)], address, buyer, payment);
 
     expect(result).toEqual({ id: "order-1" });
-    expect(fs.tx.update).toHaveBeenCalledWith({ id: "p1" }, { stock: 2 });
+    expect(fs.tx.update).toHaveBeenCalledWith({ id: "p1" }, { stock: 2, lastOrderId: "order-1", lastOrderItemIndex: 0 });
     const saved = fs.tx.set.mock.calls[0][1];
     expect(saved).toMatchObject({ userId: "u1", total: 300, status: "pending", payment, createdAt: "SERVER_TS" });
     expect(saved.items).toEqual([{ productId: "p1", name: "Zapa", priceAtPurchase: 100, quantity: 3 }]);
+  });
+
+  it("rechaza la compra sin escribir si el precio cambió desde que el cliente lo vio", async () => {
+    fs.tx.get.mockResolvedValue(productSnap("p1", { name: "Zapa", price: 150, stock: 5 }));
+
+    const attempt = createOrder([line("p1", 1, 100)], address, buyer, payment);
+
+    await expect(attempt).rejects.toBeInstanceOf(OrderPriceChangedError);
+    await expect(attempt).rejects.toMatchObject({ changes: [{ productId: "p1", name: "Zapa", price: 150 }] });
+    expect(fs.tx.update).not.toHaveBeenCalled();
+    expect(fs.tx.set).not.toHaveBeenCalled();
+  });
+
+  it("redondea el total a centavos", async () => {
+    fs.tx.get.mockResolvedValue(productSnap("p1", { name: "Zapa", price: 19.99, stock: 5 }));
+
+    await createOrder([line("p1", 3, 19.99)], address, buyer, payment);
+
+    expect(fs.tx.set.mock.calls[0][1].total).toBe(59.97);
   });
 
   it("falla sin escribir si no hay stock suficiente", async () => {

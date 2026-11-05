@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { AuthContext } from "./AuthContext";
 import type { AuthState, UserProfile, UserRole } from "../../types/auth.types";
 import {
@@ -12,6 +12,8 @@ import {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({ status: "loading" });
+  // Durante el registro, el perfil lo crea register con el nombre elegido; el listener no debe adelantarse.
+  const registeringRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -22,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthState({ status: "anonymous" });
         return;
       }
+      if (registeringRef.current) return;
 
       void ensureUserProfile(fbUser, fbUser.displayName ?? undefined)
         .then((profile) => {
@@ -81,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName?: string
     ): Promise<UserProfile> => {
       setAuthState({ status: "loading" });
+      registeringRef.current = true;
       try {
         const profile = await registerWithEmail(email, pass, displayName);
         setAuthState({
@@ -91,6 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         setAuthState({ status: "anonymous" });
         throw err;
+      } finally {
+        registeringRef.current = false;
       }
     },
     []

@@ -84,6 +84,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "REMOVE_FROM_CART", payload: { id } });
     };
 
+    const updatePrices = (changes: { productId: string; price: number }[]) => {
+      dispatch({ type: "UPDATE_PRICES", payload: { changes } });
+    };
+
     const clearCart = () => {
       dispatch({ type: "CLEAR_CART" });
     };
@@ -95,6 +99,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addToCart,
       decreaseQuantity,
       removeFromCart,
+      updatePrices,
       clearCart,
     };
   }, [state.items]);

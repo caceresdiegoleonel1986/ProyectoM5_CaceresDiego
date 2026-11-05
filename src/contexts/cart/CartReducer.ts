@@ -9,6 +9,7 @@ export type CartAction =
   | { type: "ADD_TO_CART"; payload: { product: Product; quantity: number } }
   | { type: "REMOVE_FROM_CART"; payload: { id: string } }
   | { type: "DECREASE_QUANTITY"; payload: { id: string; quantity?: number } }
+  | { type: "UPDATE_PRICES"; payload: { changes: { productId: string; price: number }[] } }
   | { type: "CLEAR_CART" };
 
 export const initialState: CartState = {
@@ -64,6 +65,15 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           .filter((item) => item.quantity > 0),
       };
     }
+
+    case "UPDATE_PRICES":
+      return {
+        ...state,
+        items: state.items.map((item) => {
+          const change = action.payload.changes.find(({ productId }) => productId === item.product.id);
+          return change ? { ...item, product: { ...item.product, price: change.price } } : item;
+        }),
+      };
 
     case "CLEAR_CART":
       return { ...state, items: [] };

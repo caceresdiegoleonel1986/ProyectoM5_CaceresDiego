@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ProductCard from "../src/components/common/ProductCard";
 import { useCart } from "../src/contexts/cart/useCart";
 import CheckoutPage from "../src/pages/CheckoutPage";
+import { OrderPriceChangedError } from "../src/services/orderErrors";
 import type { Product } from "../src/types/product.types";
 import { renderWithProviders } from "./utils/renderWithProviders";
 
@@ -106,6 +107,24 @@ describe("flujo integral: carrito → checkout → orden", () => {
     expect(buyer).toMatchObject({ id: "c1" });
     expect(payment).toEqual({ method: "simulated-card", cardLast4: "4242" });
     await waitFor(() => expect(localStorage.getItem("cart")).toBe("[]"));
+  });
+
+  it("si cambió el precio actualiza el total y pide confirmar de nuevo", async () => {
+    orderMocks.createOrder.mockRejectedValueOnce(
+      new OrderPriceChangedError([{ productId: "shoe-1", name: "Kairo Runner", price: 75 }]),
+    );
+    await goToCheckoutWithOneItem();
+    fillShipping();
+    fillCard("4242 4242 4242 4242");
+    fireEvent.click(screen.getByRole("button", { name: /Pagar \$50\.00/ }));
+
+    expect((await screen.findByRole("alert", {}, { timeout: 3000 })).textContent).toContain("Cambió el precio de Kairo Runner");
+    expect(screen.getByRole("button", { name: /Pagar \$75\.00/ })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /Pagar \$75\.00/ }));
+
+    await screen.findByText("order-123", {}, { timeout: 3000 });
+    expect(orderMocks.createOrder.mock.calls[1][0]).toEqual([expect.objectContaining({ priceAtPurchase: 75 })]);
   });
 
   it("no crea la orden si el pago simulado es rechazado y conserva el carrito", async () => {

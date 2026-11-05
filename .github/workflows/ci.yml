@@ -28,10 +28,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4. Ejecuta tests
-      - name: Run tests
-        run: npm test
+      # 4. Ejecuta lint
+      - name: Run lint
+        run: npm run lint
 
-      # 5. Ejecuta coverage
-      - name: Run coverage
+      # 5. Chequea tipos y compila
+      - name: Run build
+        run: npm run build
+
+      # 6. Ejecuta tests con coverage
+      - name: Run tests with coverage
         run: npm run test:coverage
