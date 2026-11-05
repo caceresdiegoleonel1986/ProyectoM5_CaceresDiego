@@ -39,3 +39,18 @@ jobs:
       # 6. Ejecuta tests con coverage
       - name: Run tests with coverage
         run: npm run test:coverage
+
+      # 7. Instala Java para el emulador de Firestore
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # 8. Instala Firebase CLI
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@15
+
+      # 9. Prueba firestore.rules en el emulador
+      - name: Run Firestore rules tests
+        run: npm run test:rules
