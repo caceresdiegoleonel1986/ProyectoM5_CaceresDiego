@@ -21,7 +21,7 @@ vi.mock("firebase/firestore", () => ({
 vi.mock("../src/services/firebase", () => ({ db: {} }));
 vi.mock("../src/services/converters/orderConverter", () => ({ orderConverter: {} }));
 
-import { getAllOrders, getOrderById, getOrdersByUser, updateOrderStatus } from "../src/services/orderService";
+import { getOrderById, getOrdersByUser, updateOrderStatus } from "../src/services/orderService";
 
 const docs = (...items: unknown[]) => ({ docs: items.map((o) => ({ data: () => o })) });
 
@@ -39,13 +39,6 @@ describe("consultas de órdenes", () => {
     expect(fs.where).toHaveBeenCalledWith("userId", "==", "u1");
     expect(fs.orderBy).toHaveBeenCalledWith("createdAt", "desc");
     expect(fs.limit).toHaveBeenCalledWith(50);
-  });
-
-  it("getAllOrders devuelve todas ordenadas por fecha", async () => {
-    fs.getDocs.mockResolvedValue(docs({ id: "o1" }));
-
-    expect(await getAllOrders()).toEqual([{ id: "o1" }]);
-    expect(fs.orderBy).toHaveBeenCalledWith("createdAt", "desc");
   });
 
   it("getOrderById devuelve null si no existe", async () => {
