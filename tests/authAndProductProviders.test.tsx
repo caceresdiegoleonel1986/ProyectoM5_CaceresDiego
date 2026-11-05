@@ -115,6 +115,31 @@ describe("AuthProvider", () => {
     expect(result.current.authState.status).toBe("authenticated");
   });
 
+  it("durante el registro el listener no crea el perfil antes de guardar el nombre elegido", async () => {
+    const chosenName = { ...customer, displayName: "Ana elegida" };
+    auth.registerWithEmail.mockImplementation(async () => {
+      emit({ uid: "u1", displayName: null } as FirebaseUser);
+      return chosenName;
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper: authWrapper });
+
+    await act(async () => void (await result.current.register("ana@test.com", "x", "Ana elegida")));
+
+    expect(auth.ensureUserProfile).not.toHaveBeenCalled();
+    expect(result.current.user?.displayName).toBe("Ana elegida");
+  });
+
+  it("después del registro el listener vuelve a sincronizar el perfil", async () => {
+    auth.registerWithEmail.mockResolvedValue(customer);
+    auth.ensureUserProfile.mockResolvedValue(customer);
+    const { result } = renderHook(() => useAuth(), { wrapper: authWrapper });
+    await act(async () => void (await result.current.register("ana@test.com", "x", "Ana")));
+
+    act(() => emit({ uid: "u1", displayName: "Ana" } as FirebaseUser));
+
+    await waitFor(() => expect(auth.ensureUserProfile).toHaveBeenCalledOnce());
+  });
+
   it.each([
     ["login", (a: ReturnType<typeof useAuth>) => a.login("a@b.c", "x"), auth.loginWithEmail],
     ["loginGoogle", (a: ReturnType<typeof useAuth>) => a.loginGoogle(), auth.loginWithGoogle],
