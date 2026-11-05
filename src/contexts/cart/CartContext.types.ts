@@ -5,6 +5,8 @@ export type CartContextType = {
     items: CartItem[];
     totalItems: number;
     totalPrice: number;
+    /** Se está cargando el carrito de la cuenta. */
+    syncing: boolean;
 
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (Id: string) => void;

@@ -12,4 +12,5 @@ export type FavoritesState = {
 export type FavoritesAction =
   | { type: "ADD_FAVORITE"; payload: string }
   | { type: "REMOVE_FAVORITE"; payload: string }
+  | { type: "MERGE_FAVORITES"; payload: string[] }
   | { type: "CLEAR_FAVORITES" };

@@ -31,6 +31,10 @@ const payment = { method: "simulated-card" as const, cardLast4: "4242" };
 let env: RulesTestEnvironment;
 let createOrder: typeof import("../src/services/orderService").createOrder;
 let saveReview: typeof import("../src/services/reviewService").saveReview;
+let loadCart: typeof import("../src/services/userDataService").loadCart;
+let saveCart: typeof import("../src/services/userDataService").saveCart;
+let loadFavorites: typeof import("../src/services/userDataService").loadFavorites;
+let saveFavorites: typeof import("../src/services/userDataService").saveFavorites;
 
 function as(uid: string, email = `${uid}@test.com`): Firestore {
   return env.authenticatedContext(uid, { email }).firestore() as unknown as Firestore;
@@ -103,6 +107,7 @@ beforeAll(async () => {
   connection.db = env.unauthenticatedContext().firestore();
   ({ createOrder } = await import("../src/services/orderService"));
   ({ saveReview } = await import("../src/services/reviewService"));
+  ({ loadCart, saveCart, loadFavorites, saveFavorites } = await import("../src/services/userDataService"));
 });
 
 afterAll(async () => {
@@ -315,6 +320,71 @@ describe("borrado de reseñas", () => {
 
   it("el admin puede borrarla", async () => {
     await assertSucceeds(deleteDoc(doc(as("admin"), "reviews/ana_p1")));
+  });
+});
+
+describe("carrito y favoritos", () => {
+  it("el dueño guarda y recupera su carrito con datos actualizados del producto", async () => {
+    useServicesAs("ana");
+    await assertSucceeds(saveCart("ana", [
+      { productId: "p1", quantity: 2 },
+      { productId: "borrado", quantity: 1 },
+      { productId: "p2", quantity: 99 },
+    ]));
+
+    const { entries, items } = await assertSucceeds(loadCart("ana"));
+
+    expect(entries).toHaveLength(3);
+    expect(items.map(({ product, quantity }) => [product.id, product.price, quantity])).toEqual([
+      ["p1", 100, 2],
+      ["p2", 19.99, 3],
+    ]);
+    expect(items[0].product.createdAt).toBeInstanceOf(Date);
+  });
+
+  it("omite del carrito los productos agotados", async () => {
+    await seed("products/p1", { name: "Zapa", price: 100, stock: 0 });
+    useServicesAs("ana");
+    await saveCart("ana", [{ productId: "p1", quantity: 1 }]);
+
+    expect((await loadCart("ana")).items).toEqual([]);
+  });
+
+  it("el dueño guarda y recupera sus favoritos", async () => {
+    useServicesAs("ana");
+    await assertSucceeds(saveFavorites("ana", ["p1", "p2"]));
+
+    expect(await assertSucceeds(loadFavorites("ana"))).toEqual(["p1", "p2"]);
+  });
+
+  it("devuelve vacío si todavía no hay nada guardado", async () => {
+    useServicesAs("ana");
+
+    expect(await assertSucceeds(loadCart("ana"))).toEqual({ entries: [], items: [] });
+    expect(await assertSucceeds(loadFavorites("ana"))).toEqual([]);
+  });
+
+  it.each(["carts", "favorites"])("nadie más puede leer ni escribir %s", async (collection) => {
+    const data = collection === "carts" ? { items: [] } : { productIds: [] };
+    await seed(`${collection}/ana`, data);
+    const beto = as("beto");
+    const anonymous = env.unauthenticatedContext().firestore() as unknown as Firestore;
+
+    await assertFails(getDoc(doc(beto, `${collection}/ana`)));
+    await assertFails(getDoc(doc(anonymous, `${collection}/ana`)));
+    await assertFails(getDoc(doc(as("admin"), `${collection}/ana`)));
+    await assertFails(setDoc(doc(beto, `${collection}/ana`), { ...data, updatedAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(anonymous, `${collection}/ana`), { ...data, updatedAt: serverTimestamp() }));
+  });
+
+  it("rechaza campos extra, formatos inválidos y listas demasiado largas", async () => {
+    const db = as("ana");
+    const updatedAt = serverTimestamp();
+    await assertFails(setDoc(doc(db, "carts/ana"), { items: [], updatedAt, role: "admin" }));
+    await assertFails(setDoc(doc(db, "carts/ana"), { items: "muchos", updatedAt }));
+    await assertFails(setDoc(doc(db, "carts/ana"), { items: [], updatedAt: new Date("2020-01-01") }));
+    await assertFails(setDoc(doc(db, "carts/ana"), { items: Array(101).fill({ productId: "p1", quantity: 1 }), updatedAt }));
+    await assertFails(setDoc(doc(db, "favorites/ana"), { productIds: Array(201).fill("p1"), updatedAt }));
   });
 });
 

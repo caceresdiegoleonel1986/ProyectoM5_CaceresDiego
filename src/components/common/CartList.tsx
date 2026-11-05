@@ -1,12 +1,14 @@
 import type React from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../contexts/cart/useCart";
+import { LoadingState } from "../states";
 import ConfirmActionButton from "./ConfirmActionButton";
 
 export const CartList: React.FC = () => {
-  const { items, totalItems, totalPrice, addToCart, decreaseQuantity, removeFromCart, clearCart } = useCart();
+  const { items, totalItems, totalPrice, syncing, addToCart, decreaseQuantity, removeFromCart, clearCart } = useCart();
 
   if (items.length === 0) {
+    if (syncing) return <LoadingState />;
     return <p className="state-container">Tu carrito está vacío 🛒</p>;
   }
 

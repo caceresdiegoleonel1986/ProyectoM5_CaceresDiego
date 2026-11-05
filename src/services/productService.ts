@@ -5,6 +5,7 @@ import {
   type DocumentSnapshot, type QueryConstraint,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { productConverter } from "./converters/productConverter";
 import type { Product } from "../types/product.types";
 
 export type ListProductsParams = {
@@ -73,11 +74,8 @@ export async function listProducts(
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  const ref = doc(db, "products", id);
-  const snap = await getDoc(ref);
-  return snap.exists()
-    ? { id: snap.id, ...(snap.data() as Omit<Product, "id">) }
-    : null;
+  const snap = await getDoc(doc(db, "products", id).withConverter(productConverter));
+  return snap.exists() ? snap.data() : null;
 }
 
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {

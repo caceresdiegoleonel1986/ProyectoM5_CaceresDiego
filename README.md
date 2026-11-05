@@ -20,7 +20,7 @@ E-commerce con panel de administración, hecho con React, TypeScript, Firebase (
 
 ## Funcionalidades
 
-- **Cliente:** catálogo con búsqueda (debounce) y filtro por categoría, paginación, favoritos, carrito persistente, checkout con pago simulado, historial de pedidos y reseñas.
+- **Cliente:** catálogo con búsqueda (debounce) y filtro por categoría, paginación, favoritos y carrito guardados en la cuenta, checkout con pago simulado, historial de pedidos y reseñas.
 - **Administrador:** CRUD de productos con subida de imágenes, gestión de estados de órdenes y dashboard con métricas.
 - **Autenticación:** registro y login con email y con Google, sesión persistente, rutas protegidas y roles `customer` y `admin`.
 
@@ -101,6 +101,12 @@ Usa un usuario IAM con permiso `s3:PutObject` solo sobre `products/*`. El bucket
 ## Pedidos y pago simulado
 
 Los estados son `pending`, `processing`, `completed` y `cancelled`. El checkout valida una tarjeta simulada (no se cobra nada; `4000 0000 0000 0002` simula un rechazo), crea la orden en `pending` y guarda solo los últimos 4 dígitos. El admin cambia el estado desde su panel y el cliente ve el detalle y el historial en "Mis pedidos".
+
+## Carrito y favoritos
+
+Con sesión iniciada se guardan en `carts/{uid}` y `favorites/{uid}`, que solo puede leer y escribir su dueño, y siguen a la persona entre dispositivos. El carrito guarda producto y cantidad: precio y stock se leen actualizados al cargarlo, y se omiten los productos eliminados o agotados.
+
+Sin sesión se usan en `localStorage`. Al iniciar sesión se fusionan con la cuenta (sin duplicar, con la cantidad mayor) y al cerrarla se limpian del dispositivo. No se actualizan en vivo: con la misma cuenta abierta en dos dispositivos, gana el último cambio.
 
 ## Analíticas, paginación y reseñas
 

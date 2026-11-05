@@ -134,6 +134,27 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // --- CARRITO Y FAVORITOS (privados de cada usuario) ---
+    match /carts/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['items', 'updatedAt'])
+        && request.resource.data.items is list
+        && request.resource.data.items.size() <= 100
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    match /favorites/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['productIds', 'updatedAt'])
+        && request.resource.data.productIds is list
+        && request.resource.data.productIds.size() <= 200
+        && request.resource.data.updatedAt == request.time;
+    }
+
     // --- REVIEWS ---
     match /reviews/{reviewId} {
       allow read: if true;

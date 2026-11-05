@@ -62,6 +62,12 @@ vi.mock("../src/services/converters/productConverter", () => ({ productConverter
 vi.mock("../src/services/converters/orderConverter", () => ({ orderConverter: {} }));
 vi.mock("../src/services/authService", () => authMocks);
 vi.mock("../src/services/orderService", () => orderServiceMocks);
+vi.mock("../src/services/userDataService", () => ({
+  loadCart: vi.fn(async () => ({ entries: [], items: [] })),
+  saveCart: vi.fn(async () => undefined),
+  loadFavorites: vi.fn(async () => []),
+  saveFavorites: vi.fn(async () => undefined),
+}));
 
 vi.mock("firebase/firestore", () => ({
   collection: firestoreMocks.collection,
@@ -129,6 +135,12 @@ function createWrapper(Provider: ComponentType<{ children: ReactNode }>) {
   };
 }
 
+function createAuthWrapper(Provider: ComponentType<{ children: ReactNode }>) {
+  return function Wrapper({ children }: PropsWithChildren) {
+    return <AuthProvider><Provider>{children}</Provider></AuthProvider>;
+  };
+}
+
 beforeEach(() => {
   cleanup();
   localStorage.clear();
@@ -161,7 +173,7 @@ afterEach(() => {
 
 describe("CartProvider y useCart", () => {
   it("expone acciones, derivados y persiste el carrito en localStorage", async () => {
-    const { result } = renderHook(() => useCart(), { wrapper: createWrapper(CartProvider) });
+    const { result } = renderHook(() => useCart(), { wrapper: createAuthWrapper(CartProvider) });
 
     act(() => result.current.addToCart(product, 2));
 
@@ -175,7 +187,7 @@ describe("CartProvider y useCart", () => {
       { product, quantity: 2 },
       { product: { id: "broken" }, quantity: 1 },
     ]));
-    const { result } = renderHook(() => useCart(), { wrapper: createWrapper(CartProvider) });
+    const { result } = renderHook(() => useCart(), { wrapper: createAuthWrapper(CartProvider) });
 
     expect(result.current.items).toHaveLength(1);
     expect(result.current.items[0].product.createdAt).toBeInstanceOf(Date);
@@ -185,7 +197,7 @@ describe("CartProvider y useCart", () => {
 describe("FavoriteProvider y useFavorite", () => {
   it("hidrata favoritos, evita duplicados y persiste cambios", async () => {
     localStorage.setItem("favorites", JSON.stringify(["existing"]));
-    const { result } = renderHook(() => useFavorite(), { wrapper: createWrapper(FavoriteProvider) });
+    const { result } = renderHook(() => useFavorite(), { wrapper: createAuthWrapper(FavoriteProvider) });
 
     await waitFor(() => expect(result.current.favorites).toEqual(["existing"]));
     act(() => {
