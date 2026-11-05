@@ -35,6 +35,8 @@ let loadCart: typeof import("../src/services/userDataService").loadCart;
 let saveCart: typeof import("../src/services/userDataService").saveCart;
 let loadFavorites: typeof import("../src/services/userDataService").loadFavorites;
 let saveFavorites: typeof import("../src/services/userDataService").saveFavorites;
+let loadShippingAddress: typeof import("../src/services/userDataService").loadShippingAddress;
+let saveShippingAddress: typeof import("../src/services/userDataService").saveShippingAddress;
 
 function as(uid: string, email = `${uid}@test.com`): Firestore {
   return env.authenticatedContext(uid, { email }).firestore() as unknown as Firestore;
@@ -107,7 +109,8 @@ beforeAll(async () => {
   connection.db = env.unauthenticatedContext().firestore();
   ({ createOrder } = await import("../src/services/orderService"));
   ({ saveReview } = await import("../src/services/reviewService"));
-  ({ loadCart, saveCart, loadFavorites, saveFavorites } = await import("../src/services/userDataService"));
+  ({ loadCart, saveCart, loadFavorites, saveFavorites, loadShippingAddress, saveShippingAddress } =
+    await import("../src/services/userDataService"));
 });
 
 afterAll(async () => {
@@ -385,6 +388,54 @@ describe("carrito y favoritos", () => {
     await assertFails(setDoc(doc(db, "carts/ana"), { items: [], updatedAt: new Date("2020-01-01") }));
     await assertFails(setDoc(doc(db, "carts/ana"), { items: Array(101).fill({ productId: "p1", quantity: 1 }), updatedAt }));
     await assertFails(setDoc(doc(db, "favorites/ana"), { productIds: Array(201).fill("p1"), updatedAt }));
+  });
+});
+
+describe("dirección de envío", () => {
+  const saved = { fullName: "Ana", address: "Calle 1", city: "Rosario", postalCode: "2000", phone: "341" };
+
+  it("el dueño la guarda, la recupera y la actualiza", async () => {
+    useServicesAs("ana");
+    expect(await assertSucceeds(loadShippingAddress("ana"))).toBeNull();
+
+    await assertSucceeds(saveShippingAddress("ana", saved));
+    expect(await assertSucceeds(loadShippingAddress("ana"))).toEqual(saved);
+
+    await assertSucceeds(saveShippingAddress("ana", { ...saved, city: "Mendoza" }));
+    expect(await loadShippingAddress("ana")).toMatchObject({ city: "Mendoza" });
+  });
+
+  it("acepta que no tenga teléfono", async () => {
+    useServicesAs("ana");
+    const { phone, ...withoutPhone } = saved;
+    expect(phone).toBe("341");
+
+    await assertSucceeds(saveShippingAddress("ana", withoutPhone));
+    expect(await loadShippingAddress("ana")).toMatchObject({ phone: "" });
+  });
+
+  it("nadie más puede leerla ni escribirla", async () => {
+    await seed("shippingAddresses/ana", saved);
+    const anonymous = env.unauthenticatedContext().firestore() as unknown as Firestore;
+    const write = { ...saved, updatedAt: serverTimestamp() };
+
+    await assertFails(getDoc(doc(as("beto"), "shippingAddresses/ana")));
+    await assertFails(getDoc(doc(as("admin"), "shippingAddresses/ana")));
+    await assertFails(getDoc(doc(anonymous, "shippingAddresses/ana")));
+    await assertFails(setDoc(doc(as("beto"), "shippingAddresses/ana"), write));
+    await assertFails(setDoc(doc(anonymous, "shippingAddresses/ana"), write));
+  });
+
+  it("rechaza campos extra, faltantes, vacíos o demasiado largos", async () => {
+    const db = as("ana");
+    const ref = doc(db, "shippingAddresses/ana");
+    const updatedAt = serverTimestamp();
+    await assertFails(setDoc(ref, { ...saved, updatedAt, role: "admin" }));
+    await assertFails(setDoc(ref, { fullName: "Ana", updatedAt }));
+    await assertFails(setDoc(ref, { ...saved, address: "", updatedAt }));
+    await assertFails(setDoc(ref, { ...saved, fullName: "x".repeat(101), updatedAt }));
+    await assertFails(setDoc(ref, { ...saved, postalCode: 2000, updatedAt }));
+    await assertFails(setDoc(ref, { ...saved, updatedAt: new Date("2020-01-01") }));
   });
 });
 

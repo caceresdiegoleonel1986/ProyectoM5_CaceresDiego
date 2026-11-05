@@ -23,6 +23,8 @@ const userDataMocks = vi.hoisted(() => ({
   saveCart: vi.fn(),
   loadFavorites: vi.fn(),
   saveFavorites: vi.fn(),
+  loadShippingAddress: vi.fn(),
+  saveShippingAddress: vi.fn(),
 }));
 
 vi.mock("../src/services/authService", () => authMocks);
@@ -96,6 +98,8 @@ describe("flujo integral: carrito → checkout → orden", () => {
     userDataMocks.saveCart.mockResolvedValue(undefined);
     userDataMocks.loadFavorites.mockResolvedValue([]);
     userDataMocks.saveFavorites.mockResolvedValue(undefined);
+    userDataMocks.loadShippingAddress.mockResolvedValue(null);
+    userDataMocks.saveShippingAddress.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -118,6 +122,87 @@ describe("flujo integral: carrito → checkout → orden", () => {
     expect(buyer).toMatchObject({ id: "c1" });
     expect(payment).toEqual({ method: "simulated-card", cardLast4: "4242" });
     await waitFor(() => expect(userDataMocks.saveCart).toHaveBeenLastCalledWith("c1", []));
+  });
+
+  describe("dirección guardada", () => {
+    const saved = { fullName: "Ana Guardada", address: "Calle 9", city: "Córdoba", postalCode: "5000", phone: "351" };
+    const value = (label: RegExp) => (screen.getByLabelText(label) as HTMLInputElement).value;
+
+    it("autocompleta el checkout con la dirección de la cuenta", async () => {
+      userDataMocks.loadShippingAddress.mockResolvedValue(saved);
+      await goToCheckoutWithOneItem();
+
+      await waitFor(() => expect(value(/^Dirección/)).toBe("Calle 9"));
+      expect(value(/Nombre completo/)).toBe("Ana Guardada");
+      expect(value(/Ciudad/)).toBe("Córdoba");
+      expect(value(/Teléfono/)).toBe("351");
+      expect(userDataMocks.loadShippingAddress).toHaveBeenCalledWith("c1");
+    });
+
+    it("no pisa lo que ya se escribió si la dirección llega después", async () => {
+      let finishLoad: (address: typeof saved) => void = () => undefined;
+      userDataMocks.loadShippingAddress.mockReturnValue(new Promise((resolve) => { finishLoad = resolve; }));
+      await goToCheckoutWithOneItem();
+
+      fireEvent.change(screen.getByLabelText(/Ciudad/), { target: { value: "Mendoza" } });
+      finishLoad(saved);
+
+      await waitFor(() => expect(userDataMocks.loadShippingAddress).toHaveBeenCalled());
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(value(/Ciudad/)).toBe("Mendoza");
+      expect(value(/^Dirección/)).toBe("");
+    });
+
+    it("guarda la dirección después de una compra exitosa", async () => {
+      await goToCheckoutWithOneItem();
+      fillShipping();
+      fillCard("4242 4242 4242 4242");
+      fireEvent.click(screen.getByRole("button", { name: /Pagar/ }));
+
+      await screen.findByText("order-123", {}, { timeout: 3000 });
+      expect(userDataMocks.saveShippingAddress).toHaveBeenCalledWith("c1", expect.objectContaining({
+        fullName: "Ana Perez",
+        address: "Calle 1",
+        city: "Rosario",
+        postalCode: "2000",
+      }));
+    });
+
+    it("si no se puede guardar la dirección, la compra igual se confirma", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      userDataMocks.saveShippingAddress.mockRejectedValue(new Error("permission-denied"));
+      await goToCheckoutWithOneItem();
+      fillShipping();
+      fillCard("4242 4242 4242 4242");
+      fireEvent.click(screen.getByRole("button", { name: /Pagar/ }));
+
+      await screen.findByText("order-123", {}, { timeout: 3000 });
+      await waitFor(() => expect(consoleError).toHaveBeenCalled());
+      expect(screen.queryByRole("alert")).toBeNull();
+      consoleError.mockRestore();
+    });
+
+    it("si no se puede cargar, deja completar el formulario a mano", async () => {
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      userDataMocks.loadShippingAddress.mockRejectedValue(new Error("permission-denied"));
+      await goToCheckoutWithOneItem();
+
+      await waitFor(() => expect(consoleError).toHaveBeenCalled());
+      expect(value(/Nombre completo/)).toBe("Cliente");
+      expect(screen.queryByRole("alert")).toBeNull();
+      consoleError.mockRestore();
+    });
+
+    it("no guarda la dirección si la orden falla", async () => {
+      orderMocks.createOrder.mockRejectedValueOnce(new Error("Stock insuficiente"));
+      await goToCheckoutWithOneItem();
+      fillShipping();
+      fillCard("4242 4242 4242 4242");
+      fireEvent.click(screen.getByRole("button", { name: /Pagar/ }));
+
+      expect((await screen.findByRole("alert", {}, { timeout: 3000 })).textContent).toContain("Stock insuficiente");
+      expect(userDataMocks.saveShippingAddress).not.toHaveBeenCalled();
+    });
   });
 
   it("si cambió el precio actualiza el total y pide confirmar de nuevo", async () => {

@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, LoadingState } from "../components/states";
 import { useCart } from "../contexts/cart/useCart";
 import { useAuth } from "../contexts/auth/useAuth";
 import { createOrder } from "../services/orderService";
 import { OrderPriceChangedError } from "../services/orderErrors";
+import { loadShippingAddress, saveShippingAddress } from "../services/userDataService";
 import { simulatePayment, type CardDetails } from "../services/paymentService";
 import type { ShippingAddress } from "../types/order.types";
 import Spinner from "../components/ui/Spinner";
@@ -23,6 +24,27 @@ export function CheckoutPage() {
     postalCode: "",
     phone: "",
   });
+  const addressEdited = useRef(false);
+  const userId = user?.id;
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    void loadShippingAddress(userId)
+      .then((saved) => {
+        // Si ya empezó a escribir, no se pisa lo que puso.
+        if (active && saved && !addressEdited.current) setShippingAddress(saved);
+      })
+      .catch((cause: unknown) => console.error("No se pudo cargar la dirección guardada:", cause));
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  const updateAddress = (changes: Partial<ShippingAddress>) => {
+    addressEdited.current = true;
+    setShippingAddress((current) => ({ ...current, ...changes }));
+  };
 
   const handleCheckout = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,6 +67,9 @@ export function CheckoutPage() {
       );
       setOrderId(order.id);
       clearCart();
+      // La orden ya está creada: si falla guardar la dirección, la compra no se ve afectada.
+      void saveShippingAddress(user.id, shippingAddress)
+        .catch((cause: unknown) => console.error("No se pudo guardar la dirección:", cause));
     } catch (err) {
       if (err instanceof OrderPriceChangedError) updatePrices(err.changes);
       setError(err instanceof Error ? err.message : "Error desconocido");
@@ -89,7 +114,7 @@ export function CheckoutPage() {
             required
             maxLength={100}
             value={shippingAddress.fullName}
-            onChange={(event) => setShippingAddress({ ...shippingAddress, fullName: event.target.value })}
+            onChange={(event) => updateAddress({ fullName: event.target.value })}
           />
         </label>
         <label>Dirección
@@ -98,7 +123,7 @@ export function CheckoutPage() {
             required
             maxLength={200}
             value={shippingAddress.address}
-            onChange={(event) => setShippingAddress({ ...shippingAddress, address: event.target.value })}
+            onChange={(event) => updateAddress({ address: event.target.value })}
           />
         </label>
         <label>Ciudad
@@ -107,7 +132,7 @@ export function CheckoutPage() {
             required
             maxLength={100}
             value={shippingAddress.city}
-            onChange={(event) => setShippingAddress({ ...shippingAddress, city: event.target.value })}
+            onChange={(event) => updateAddress({ city: event.target.value })}
           />
         </label>
         <label>Código postal
@@ -116,7 +141,7 @@ export function CheckoutPage() {
             required
             maxLength={20}
             value={shippingAddress.postalCode}
-            onChange={(event) => setShippingAddress({ ...shippingAddress, postalCode: event.target.value })}
+            onChange={(event) => updateAddress({ postalCode: event.target.value })}
           />
         </label>
         <label>Teléfono
@@ -125,7 +150,7 @@ export function CheckoutPage() {
             autoComplete="tel"
             maxLength={30}
             value={shippingAddress.phone}
-            onChange={(event) => setShippingAddress({ ...shippingAddress, phone: event.target.value })}
+            onChange={(event) => updateAddress({ phone: event.target.value })}
           />
         </label>
         <h3>Pago (simulado)</h3>

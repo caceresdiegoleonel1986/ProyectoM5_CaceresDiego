@@ -2,6 +2,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { getProductsByIds } from "./productService";
 import type { CartItem } from "../types/cartItem.types";
+import type { ShippingAddress } from "../types/order.types";
 
 /** En la base solo se guarda la referencia: precio y stock se leen actualizados del producto. */
 export type CartEntry = { productId: string; quantity: number };
@@ -39,4 +40,29 @@ export async function loadFavorites(userId: string): Promise<string[]> {
 
 export async function saveFavorites(userId: string, productIds: string[]): Promise<void> {
   await setDoc(doc(db, "favorites", userId), { productIds, updatedAt: serverTimestamp() });
+}
+
+export async function loadShippingAddress(userId: string): Promise<ShippingAddress | null> {
+  const snapshot = await getDoc(doc(db, "shippingAddresses", userId));
+  const data = snapshot.data();
+  if (!data) return null;
+  const text = (value: unknown) => (typeof value === "string" ? value : "");
+  return {
+    fullName: text(data.fullName),
+    address: text(data.address),
+    city: text(data.city),
+    postalCode: text(data.postalCode),
+    phone: text(data.phone),
+  };
+}
+
+export async function saveShippingAddress(userId: string, address: ShippingAddress): Promise<void> {
+  await setDoc(doc(db, "shippingAddresses", userId), {
+    fullName: address.fullName,
+    address: address.address,
+    city: address.city,
+    postalCode: address.postalCode,
+    phone: address.phone ?? "",
+    updatedAt: serverTimestamp(),
+  });
 }
