@@ -1,5 +1,6 @@
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { RevenuePoint, TopProduct } from "../../contexts/admin/analytics";
+import { formatPrice } from "../../utils/formatPrice";
 
 type Props = { revenueByDay: RevenuePoint[]; topProducts: TopProduct[] };
 
@@ -17,7 +18,7 @@ export default function AnalyticsCharts({ revenueByDay, topProducts }: Props) {
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis dataKey="date" />
             <YAxis />
-            <Tooltip />
+            <Tooltip formatter={(value) => formatPrice(Number(value))} />
             <Line type="monotone" dataKey="revenue" name="Ingresos" stroke="var(--primary)" strokeWidth={2.5} />
           </LineChart>
         </ResponsiveContainer>

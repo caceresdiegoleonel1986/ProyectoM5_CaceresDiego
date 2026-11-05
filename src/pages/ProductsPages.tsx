@@ -21,12 +21,13 @@ export function ProductsPage() {
   const [searchText, setSearchText] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const debouncedSearch = useDebounce(searchText, 400);
-  const searchPrefix = debouncedSearch.trim().toLowerCase();
-  const firstSearchWord = searchPrefix.split(/\s+/)[0];
+  const normalizedSearch = debouncedSearch.trim().toLowerCase();
+  const [firstSearchWord, ...otherSearchWords] = normalizedSearch.split(/\s+/);
   const searchedCategory = firstSearchWord.length >= 2
     ? CATEGORIES.find((category) => category.id && category.label.toLowerCase().startsWith(firstSearchWord))
     : undefined;
   const activeCategoryId = searchedCategory?.id || categoryId;
+  const productSearch = searchedCategory ? otherSearchWords.join(" ") : normalizedSearch;
   const {
     products,
     loading,
@@ -37,7 +38,7 @@ export function ProductsPage() {
     retry,
   } = useProductsRealtime(
     activeCategoryId || undefined,
-    searchPrefix.length >= 2 && !searchedCategory ? searchPrefix : undefined,
+    productSearch.length >= 2 ? productSearch : undefined,
   );
 
   const handleAddToCart = (productId: string) => {
@@ -50,7 +51,7 @@ export function ProductsPage() {
     else addFavorite(productId);
   };
 
-  const hasFilters = Boolean(searchPrefix || categoryId);
+  const hasFilters = Boolean(normalizedSearch || categoryId);
 
   return (
     <div className="catalogPage">

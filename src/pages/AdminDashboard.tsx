@@ -7,6 +7,7 @@ import type { OrderStatus } from "../types/order.types";
 import { ORDER_STATUSES, ORDER_STATUS_LABELS } from "../types/order.types";
 import Spinner from "../components/ui/Spinner";
 import ConfirmActionButton from "../components/common/ConfirmActionButton";
+import { formatPrice } from "../utils/formatPrice";
 
 const AnalyticsCharts = lazy(() => import("../components/admin/AnalyticsCharts"));
 
@@ -161,7 +162,7 @@ export default function AdminDashboard() {
         <p className="admin-stat">Productos <strong>{analytics.productCount}</strong></p>
         <p className="admin-stat">Órdenes <strong>{analytics.orderCount}</strong></p>
         <p className="admin-stat">Órdenes completadas <strong>{analytics.completedOrderCount}</strong></p>
-        <p className="admin-stat admin-stat--accent">Ingresos completados <strong>${analytics.completedRevenue.toFixed(2)}</strong></p>
+        <p className="admin-stat admin-stat--accent">Ingresos completados <strong>{formatPrice(analytics.completedRevenue)}</strong></p>
       </section>
 
       <section aria-label="Gráficos de ventas">
@@ -221,7 +222,7 @@ export default function AdminDashboard() {
         <ul className="admin-list">
           {products.map((product) => (
             <li className="admin-list__item" key={product.id}>
-              <span>{product.name} · ${product.price} · Stock {product.stock}</span>
+              <span>{product.name} · {formatPrice(product.price)} · Stock {product.stock}</span>
               <span className="admin-list__actions">
                 <button type="button" className="button button--quiet button--compact" onClick={() => startEditing(product)}>Editar</button>
                 <ConfirmActionButton
@@ -267,7 +268,7 @@ export default function AdminDashboard() {
         <ul className="admin-list">
           {visibleOrders.map((order) => (
             <li className="admin-list__item" key={order.id}>
-              <span>{order.customerName || order.userEmail} · ${order.total.toFixed(2)} · <span className={`status-badge status-badge--${order.status}`}>{ORDER_STATUS_LABELS[order.status]}</span></span>
+              <span>{order.customerName || order.userEmail} · {formatPrice(order.total)} · <span className={`status-badge status-badge--${order.status}`}>{ORDER_STATUS_LABELS[order.status]}</span></span>
               <span className="admin-list__actions">
                 {order.status === "pending" && (
                   <ConfirmActionButton

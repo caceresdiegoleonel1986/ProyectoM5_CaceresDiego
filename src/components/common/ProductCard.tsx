@@ -1,6 +1,7 @@
 import type React from "react";
 import type { Product } from "../../types/product.types";
 import { Button } from "../ui/Button";
+import { formatPrice } from "../../utils/formatPrice";
 
 type GridProps = {
   layout: "grid";
@@ -26,7 +27,7 @@ export const ProductCard: React.FC<ProductCardProps> = (props) => {
       {product.imageUrl && <img src={product.imageUrl} alt={product.name} />}
       <h3>{product.name}</h3>
 
-      {props.layout === "grid" && props.showPrice && <p className="card-price">${product.price}</p>}
+      {props.layout === "grid" && props.showPrice && <p className="card-price">{formatPrice(product.price)}</p>}
 
       {product.ratingCount !== undefined && product.ratingCount > 0 ? (
         <p aria-label={`Calificación ${product.rating ?? 0} de 5, ${product.ratingCount} reseñas`}>

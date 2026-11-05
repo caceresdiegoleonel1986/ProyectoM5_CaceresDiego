@@ -14,8 +14,12 @@ import {
 import { db } from "../../config/firebase";
 import { productConverter } from "../../services/converters/productConverter";
 import type { Product } from "../../types/product.types";
+import { matchesSearch } from "../../utils/matchesSearch";
 
 const productsCollection = collection(db, "products").withConverter(productConverter);
+
+// Firestore no busca dentro de un texto: al buscar se carga el catálogo hasta este tope y se filtra acá.
+const SEARCH_SCAN_LIMIT = 500;
 
 type CatalogPageState = {
   queryKey: string;
@@ -32,12 +36,13 @@ type RequestState = {
 
 export function useProductsRealtime(
   categoryId?: string,
-  searchPrefix?: string,
+  search?: string,
   pageSize = 20,
 ) {
   const normalizedCategory = categoryId || "";
-  const normalizedSearch = searchPrefix || "";
-  const queryKey = JSON.stringify([normalizedCategory, normalizedSearch, pageSize]);
+  const isSearching = Boolean(search);
+  // La búsqueda no integra la clave: cambiar el texto filtra lo cargado sin volver a leer Firestore.
+  const queryKey = JSON.stringify([normalizedCategory, isSearching, pageSize]);
   const [pageState, setPageState] = useState<CatalogPageState>({
     queryKey: "",
     firstPage: [],
@@ -56,14 +61,10 @@ export function useProductsRealtime(
     const constraints: QueryConstraint[] = [];
     if (normalizedCategory) constraints.push(where("categoryId", "==", normalizedCategory));
     constraints.push(orderBy("nameLower"));
-    if (normalizedSearch) {
-      constraints.push(where("nameLower", ">=", normalizedSearch));
-      constraints.push(where("nameLower", "<=", `${normalizedSearch}\uf8ff`));
-    }
     if (cursor) constraints.push(startAfter(cursor));
-    constraints.push(limit(pageSize));
+    constraints.push(limit(isSearching ? SEARCH_SCAN_LIMIT : pageSize));
     return query(productsCollection, ...constraints);
-  }, [normalizedCategory, normalizedSearch, pageSize]);
+  }, [normalizedCategory, isSearching, pageSize]);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -73,9 +74,9 @@ export function useProductsRealtime(
           queryKey,
           firstPage: snapshot.docs,
           nextPages: current.queryKey === queryKey ? current.nextPages : [],
-          hasMore: current.queryKey === queryKey && current.nextPages.length > 0
+          hasMore: !isSearching && (current.queryKey === queryKey && current.nextPages.length > 0
             ? current.hasMore
-            : snapshot.docs.length === pageSize,
+            : snapshot.docs.length === pageSize),
         }));
         setRequestState({ queryKey, loadingMore: false, error: null });
       },
@@ -88,7 +89,7 @@ export function useProductsRealtime(
       },
     );
     return unsubscribe;
-  }, [buildQuery, pageSize, queryKey, refreshVersion]);
+  }, [buildQuery, isSearching, pageSize, queryKey, refreshVersion]);
 
   const activePage = pageState.queryKey === queryKey ? pageState : null;
   const firstPage = activePage?.firstPage ?? [];
@@ -97,7 +98,10 @@ export function useProductsRealtime(
   for (const productDoc of [...firstPage, ...nextPages]) {
     if (!uniqueDocs.has(productDoc.id)) uniqueDocs.set(productDoc.id, productDoc);
   }
-  const products = [...uniqueDocs.values()].map((productDoc) => productDoc.data());
+  const loadedProducts = [...uniqueDocs.values()].map((productDoc) => productDoc.data());
+  const products = search
+    ? loadedProducts.filter((product) => matchesSearch(product.name, search))
+    : loadedProducts;
   const lastDoc = nextPages.at(-1) ?? firstPage.at(-1) ?? null;
   const hasMore = activePage?.hasMore ?? true;
   const currentRequest = requestState.queryKey === queryKey ? requestState : null;

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useCart } from "../../contexts/cart/useCart";
 import { LoadingState } from "../states";
 import ConfirmActionButton from "./ConfirmActionButton";
+import { formatPrice } from "../../utils/formatPrice";
 
 export const CartList: React.FC = () => {
   const { items, totalItems, totalPrice, syncing, addToCart, decreaseQuantity, removeFromCart, clearCart } = useCart();
@@ -28,7 +29,7 @@ export const CartList: React.FC = () => {
                   )}
                   <div className="cart-item__info">
                     <strong>{item.product.name}</strong>
-                    <span className="cart-item__price">${item.product.price}</span>
+                    <span className="cart-item__price">{formatPrice(item.product.price)}</span>
                     <span className="cart-item__qty">Cantidad: {item.quantity}</span>
                   </div>
                 </div>
@@ -57,7 +58,7 @@ export const CartList: React.FC = () => {
         <aside className="panel cart-summary">
           <h3>Resumen</h3>
           <p>Total de ítems: <span>{totalItems}</span></p>
-          <p className="cart-summary__total">Total a pagar: <span>${totalPrice}</span></p>
+          <p className="cart-summary__total">Total a pagar: <span>{formatPrice(totalPrice)}</span></p>
           <div className="cart-summary__actions">
             <Link className="button button--primary" to="/checkout">Continuar al checkout</Link>
             <ConfirmActionButton

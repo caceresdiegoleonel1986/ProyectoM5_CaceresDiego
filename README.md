@@ -112,7 +112,7 @@ La dirección de envío se guarda en `shippingAddresses/{uid}`, también privada
 
 ## Analíticas, paginación y reseñas
 
-El dashboard muestra conteos agregados (`getCountFromServer`, `getAggregateFromServer`) y gráficos con ingresos por día y productos más vendidos sobre las últimas 200 órdenes no canceladas. El catálogo usa `onSnapshot` en la primera página y pagina con `limit()` y `startAfter()`. Las reseñas viven en la colección `reviews` y el promedio se guarda en el producto.
+El dashboard muestra conteos agregados (`getCountFromServer`, `getAggregateFromServer`) y gráficos con ingresos por día y productos más vendidos sobre las últimas 200 órdenes no canceladas. El catálogo usa `onSnapshot` en la primera página y pagina con `limit()` y `startAfter()`. Como Firestore no busca dentro de un texto, la búsqueda carga hasta 500 productos y filtra en el navegador por palabras en cualquier parte del nombre: cambiar el texto no genera lecturas nuevas, pero un catálogo mayor a ese tope necesitaría un servicio de búsqueda externo. Las reseñas viven en la colección `reviews` y el promedio se guarda en el producto.
 
 ## Despliegue
 
