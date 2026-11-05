@@ -9,6 +9,9 @@ export function favoriteReducer(state: FavoritesState, action: FavoritesAction):
     case "REMOVE_FAVORITE":
       return { favorites: state.favorites.filter((id) => id !== action.payload) };
 
+    case "MERGE_FAVORITES":
+      return { favorites: [...new Set([...action.payload, ...state.favorites])] };
+
     case "CLEAR_FAVORITES":
       return { favorites: [] };
 

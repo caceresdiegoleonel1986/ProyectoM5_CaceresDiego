@@ -1,31 +1,41 @@
-import { useReducer, useEffect } from "react";
+import { useCallback, useEffect, useReducer } from "react";
 import { FavoriteContext } from "./FavoriteContext";
 import { favoriteReducer } from "./FavoriteReducer";
 import type { FavoritesState } from "./FavoriteContext.types";
+import { useAccountSync } from "../../hooks/useAccountSync";
+import { loadFavorites, saveFavorites } from "../../services/userDataService";
+
+function loadGuestFavorites(): FavoritesState {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem("favorites") ?? "null");
+    if (!Array.isArray(parsed)) return { favorites: [] };
+    return { favorites: [...new Set(parsed.filter((id): id is string => typeof id === "string"))] };
+  } catch {
+    return { favorites: [] };
+  }
+}
+
+async function loadAccountFavorites(userId: string) {
+  const productIds = await loadFavorites(userId);
+  return { data: productIds, saved: productIds };
+}
 
 export function FavoriteProvider({ children }: { children: React.ReactNode }) {
-  const initialState: FavoritesState = { favorites: [] };
-  const [state, dispatch] = useReducer(favoriteReducer, initialState);
+  const [state, dispatch] = useReducer(favoriteReducer, undefined, loadGuestFavorites);
+  const onLoaded = useCallback((productIds: string[]) => dispatch({ type: "MERGE_FAVORITES", payload: productIds }), []);
+  const onLogout = useCallback(() => dispatch({ type: "CLEAR_FAVORITES" }), []);
+  const { syncing, persistLocally } = useAccountSync({
+    value: state.favorites,
+    guestKey: "favorites",
+    load: loadAccountFavorites,
+    save: saveFavorites,
+    onLoaded,
+    onLogout,
+  });
 
-  // Cargar favoritos desde localStorage
   useEffect(() => {
-    const stored = localStorage.getItem("favorites");
-    if (!stored) return;
-    try {
-      const parsed: unknown = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        parsed.filter((id): id is string => typeof id === "string")
-          .forEach((id) => dispatch({ type: "ADD_FAVORITE", payload: id }));
-      }
-    } catch {
-      localStorage.removeItem("favorites");
-    }
-  }, []);
-
-  // Guardar favoritos en localStorage
-  useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(state.favorites));
-  }, [state.favorites]);
+    if (persistLocally) localStorage.setItem("favorites", JSON.stringify(state.favorites));
+  }, [state.favorites, persistLocally]);
 
   const addFavorite = (id: string) => dispatch({ type: "ADD_FAVORITE", payload: id });
   const removeFavorite = (id: string) => dispatch({ type: "REMOVE_FAVORITE", payload: id });
@@ -36,6 +46,7 @@ export function FavoriteProvider({ children }: { children: React.ReactNode }) {
       value={{
         favorites: state.favorites,
         totalFavorites: state.favorites.length,
+        syncing,
         addFavorite,
         removeFavorite,
         clearFavorites,

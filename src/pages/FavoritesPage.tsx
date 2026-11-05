@@ -7,7 +7,7 @@ import { getProductsByIds } from "../services/productService";
 import type { Product } from "../types/product.types";
 
 export default function FavoritesPage() {
-  const { favorites, removeFavorite } = useFavorite();
+  const { favorites, syncing, removeFavorite } = useFavorite();
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +30,7 @@ export default function FavoritesPage() {
   }, [favorites]);
 
   if (favorites.length === 0) {
+    if (syncing) return <LoadingState />;
     return <EmptyState title="No tienes favoritos guardados" description="Los productos que marques como favoritos aparecerán aquí." />;
   }
   if (loading) return <LoadingState />;

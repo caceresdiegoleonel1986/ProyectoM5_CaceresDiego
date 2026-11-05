@@ -18,9 +18,16 @@ const authMocks = vi.hoisted(() => ({
   subscribeToAuthState: vi.fn(),
 }));
 const orderMocks = vi.hoisted(() => ({ createOrder: vi.fn() }));
+const userDataMocks = vi.hoisted(() => ({
+  loadCart: vi.fn(),
+  saveCart: vi.fn(),
+  loadFavorites: vi.fn(),
+  saveFavorites: vi.fn(),
+}));
 
 vi.mock("../src/services/authService", () => authMocks);
 vi.mock("../src/services/orderService", () => orderMocks);
+vi.mock("../src/services/userDataService", () => userDataMocks);
 
 const product: Product = {
   id: "shoe-1",
@@ -85,6 +92,10 @@ describe("flujo integral: carrito → checkout → orden", () => {
     });
     authMocks.ensureUserProfile.mockResolvedValue(customer);
     orderMocks.createOrder.mockResolvedValue({ id: "order-123" });
+    userDataMocks.loadCart.mockResolvedValue({ entries: [], items: [] });
+    userDataMocks.saveCart.mockResolvedValue(undefined);
+    userDataMocks.loadFavorites.mockResolvedValue([]);
+    userDataMocks.saveFavorites.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -106,7 +117,7 @@ describe("flujo integral: carrito → checkout → orden", () => {
     expect(address).toMatchObject({ fullName: "Ana Perez", city: "Rosario" });
     expect(buyer).toMatchObject({ id: "c1" });
     expect(payment).toEqual({ method: "simulated-card", cardLast4: "4242" });
-    await waitFor(() => expect(localStorage.getItem("cart")).toBe("[]"));
+    await waitFor(() => expect(userDataMocks.saveCart).toHaveBeenLastCalledWith("c1", []));
   });
 
   it("si cambió el precio actualiza el total y pide confirmar de nuevo", async () => {
@@ -135,7 +146,7 @@ describe("flujo integral: carrito → checkout → orden", () => {
 
     expect((await screen.findByRole("alert", {}, { timeout: 3000 })).textContent).toContain("rechazado");
     expect(orderMocks.createOrder).not.toHaveBeenCalled();
-    expect(localStorage.getItem("cart")).toContain("shoe-1");
+    expect(userDataMocks.saveCart).toHaveBeenLastCalledWith("c1", [{ productId: "shoe-1", quantity: 1 }]);
   });
 
   it("muestra un estado vacío si se entra al checkout sin items", async () => {

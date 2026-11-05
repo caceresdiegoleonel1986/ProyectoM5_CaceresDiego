@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { EmptyState } from "../components/states";
+import { EmptyState, LoadingState } from "../components/states";
 import { useCart } from "../contexts/cart/useCart";
 import { useAuth } from "../contexts/auth/useAuth";
 import { createOrder } from "../services/orderService";
@@ -10,7 +10,7 @@ import type { ShippingAddress } from "../types/order.types";
 import Spinner from "../components/ui/Spinner";
 
 export function CheckoutPage() {
-  const { items, clearCart, totalPrice, updatePrices } = useCart();
+  const { items, clearCart, totalPrice, syncing, updatePrices } = useCart();
   const { user } = useAuth();
   const [orderId, setOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,6 +63,7 @@ export function CheckoutPage() {
   }
 
   if (items.length === 0) {
+    if (syncing) return <LoadingState />;
     return <EmptyState title="Tu carrito está vacío" description="Agrega productos antes de continuar al checkout." />;
   }
 

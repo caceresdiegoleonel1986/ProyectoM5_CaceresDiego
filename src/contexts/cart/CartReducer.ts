@@ -10,6 +10,7 @@ export type CartAction =
   | { type: "REMOVE_FROM_CART"; payload: { id: string } }
   | { type: "DECREASE_QUANTITY"; payload: { id: string; quantity?: number } }
   | { type: "UPDATE_PRICES"; payload: { changes: { productId: string; price: number }[] } }
+  | { type: "MERGE_ITEMS"; payload: { items: CartItem[] } }
   | { type: "CLEAR_CART" };
 
 export const initialState: CartState = {
@@ -74,6 +75,18 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           return change ? { ...item, product: { ...item.product, price: change.price } } : item;
         }),
       };
+
+    // Fusiona el carrito de la cuenta con el actual sin duplicar: usa el producto actualizado y la cantidad mayor.
+    case "MERGE_ITEMS": {
+      const { items } = action.payload;
+      const merged = items.map((item) => {
+        const current = state.items.find(({ product }) => product.id === item.product.id);
+        if (!current) return item;
+        return { ...item, quantity: Math.min(item.product.stock, Math.max(item.quantity, current.quantity)) };
+      });
+      const onlyCurrent = state.items.filter(({ product }) => !items.some((item) => item.product.id === product.id));
+      return { ...state, items: [...merged, ...onlyCurrent] };
+    }
 
     case "CLEAR_CART":
       return { ...state, items: [] };

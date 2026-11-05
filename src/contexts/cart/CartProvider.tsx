@@ -1,4 +1,6 @@
-import { useEffect, useReducer, useMemo, type ReactNode } from "react";
+import { useCallback, useEffect, useReducer, useMemo, type ReactNode } from "react";
+import { useAccountSync } from "../../hooks/useAccountSync";
+import { loadCart, saveCart } from "../../services/userDataService";
 import type { Product } from "../../types/product.types";
 import type { CartItem } from "../../types/cartItem.types";
 import type { CartState } from "./CartReducer";
@@ -55,14 +57,33 @@ function loadCartState(): CartState {
   }
 }
 
+async function loadAccountCart(userId: string) {
+  const { entries, items } = await loadCart(userId);
+  return { data: items, saved: entries };
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState, loadCartState);
+  const entries = useMemo(
+    () => state.items.map(({ product, quantity }) => ({ productId: product.id, quantity })),
+    [state.items],
+  );
+  const onLoaded = useCallback((items: CartItem[]) => dispatch({ type: "MERGE_ITEMS", payload: { items } }), []);
+  const onLogout = useCallback(() => dispatch({ type: "CLEAR_CART" }), []);
+  const { syncing, persistLocally } = useAccountSync({
+    value: entries,
+    guestKey: "cart",
+    load: loadAccountCart,
+    save: saveCart,
+    onLoaded,
+    onLogout,
+  });
 
   useEffect(() => {
-    if (typeof localStorage !== "undefined") {
+    if (persistLocally && typeof localStorage !== "undefined") {
       localStorage.setItem("cart", JSON.stringify(state.items));
     }
-  }, [state.items]);
+  }, [state.items, persistLocally]);
 
   const value = useMemo(() => {
     const totalItems = state.items.reduce((acc, item) => acc + item.quantity, 0);
@@ -96,13 +117,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items: state.items,
       totalItems,
       totalPrice,
+      syncing,
       addToCart,
       decreaseQuantity,
       removeFromCart,
       updatePrices,
       clearCart,
     };
-  }, [state.items]);
+  }, [state.items, syncing]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
