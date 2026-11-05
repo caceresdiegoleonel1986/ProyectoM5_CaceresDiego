@@ -100,7 +100,7 @@ Usa un usuario IAM con permiso `s3:PutObject` solo sobre `products/*`. El bucket
 
 ## Pedidos y pago simulado
 
-Los estados son `pending`, `processing`, `completed` y `cancelled`. El checkout valida una tarjeta simulada (no se cobra nada; `4000 0000 0000 0002` simula un rechazo), crea la orden en `pending` y guarda solo los últimos 4 dígitos. El admin cambia el estado desde su panel y el cliente ve el detalle y el historial en "Mis pedidos".
+Los estados son `pending`, `processing`, `completed` y `cancelled`. El checkout valida una tarjeta simulada (no se cobra nada; `4000 0000 0000 0002` simula un rechazo), crea la orden en `pending` y guarda solo los últimos 4 dígitos. El admin cambia el estado desde su panel y el cliente ve el detalle y el historial en "Mis pedidos". Al cancelar una orden, sus productos vuelven al stock en la misma transacción, y una orden cancelada ya no admite cambios.
 
 ## Carrito y favoritos
 
